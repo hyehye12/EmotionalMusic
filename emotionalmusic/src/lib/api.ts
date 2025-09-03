@@ -3,7 +3,7 @@ import axios from "axios";
 import { supabase } from "./supabase";
 
 export const api = axios.create({
-  baseURL: process.env.REACT_API_URL, // 예: https://your-backend.onrender.com
+  baseURL: process.env.REACT_API_URL,
 });
 
 api.interceptors.request.use(async (config) => {

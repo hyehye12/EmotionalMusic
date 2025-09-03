@@ -2,7 +2,7 @@ import React from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useDiaryAnalysis } from "../hooks/useGPTAnalysis";
-import { handleApiResponse, safeJsonParse } from "../utils/apiUtils";
+import { safeJsonParse } from "../utils/apiUtils";
 
 export default function GPTAnalysisPage() {
   const { diaryText } = useParams<{ diaryText: string }>();
@@ -67,11 +67,11 @@ export default function GPTAnalysisPage() {
 
   if (loading) {
     return (
-      <div className="relative flex items-center justify-center min-h-screen p-8 font-sans">
+      <div className="relative flex items-center justify-center min-h-screen p-4 sm:p-8 font-sans">
         {/* Clean Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100"></div>
 
-        <div className="w-full max-w-lg p-12 text-center modern-card">
+        <div className="w-full max-w-lg p-8 sm:p-12 text-center modern-card">
           <motion.div
             className="mb-8"
             animate={{
@@ -89,10 +89,10 @@ export default function GPTAnalysisPage() {
             </div>
           </motion.div>
 
-          <h2 className="mb-4 text-3xl font-bold text-gray-900">
+          <h2 className="mb-4 text-2xl sm:text-3xl font-bold text-gray-900">
             AI 분석 진행 중
           </h2>
-          <p className="mb-8 leading-relaxed text-gray-600">
+          <p className="mb-6 sm:mb-8 text-sm sm:text-base leading-relaxed text-gray-600">
             AI가 당신의 이야기를 분석 중입니다...
           </p>
 
@@ -142,14 +142,14 @@ export default function GPTAnalysisPage() {
 
   if (error) {
     return (
-      <div className="relative flex items-center justify-center min-h-screen p-8 font-sans">
+      <div className="relative flex items-center justify-center min-h-screen p-4 sm:p-8 font-sans">
         {/* Clean Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100"></div>
 
-        <div className="w-full max-w-lg p-12 text-center modern-card">
-          <div className="mb-8 text-6xl">❌</div>
-          <h2 className="mb-4 text-2xl font-bold text-gray-900">오류 발생</h2>
-          <p className="mb-8 text-gray-600">{error}</p>
+        <div className="w-full max-w-lg p-8 sm:p-12 text-center modern-card">
+          <div className="mb-6 sm:mb-8 text-4xl sm:text-6xl">❌</div>
+          <h2 className="mb-4 text-xl sm:text-2xl font-bold text-gray-900">오류 발생</h2>
+          <p className="mb-6 sm:mb-8 text-sm sm:text-base text-gray-600">{error}</p>
 
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
             <button
@@ -177,34 +177,34 @@ export default function GPTAnalysisPage() {
   return (
     <div className="relative min-h-screen font-sans bg-gray-50">
       {/* Header */}
-      <div className="relative px-8 py-16">
+      <div className="relative px-4 sm:px-8 py-8 sm:py-16">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between mb-12">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8 sm:mb-12">
             <button
               onClick={handleBack}
-              className="px-6 py-3 font-medium text-gray-700 transition-all bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="self-start mb-4 lg:mb-0 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-medium text-gray-700 transition-all bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               ← 돌아가기
             </button>
 
-            <div className="text-center">
-              <h1 className="mb-4 text-5xl font-bold text-gray-900">
+            <div className="text-center flex-1 lg:flex-none">
+              <h1 className="mb-3 sm:mb-4 text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900">
                 AI 감정 분석
               </h1>
-              <div className="flex items-center justify-center space-x-4 text-gray-600">
+              <div className="flex items-center justify-center space-x-2 sm:space-x-4 text-sm sm:text-base text-gray-600">
                 <span className="font-medium">원본 이야기</span>
-                <div className="w-8 h-0.5 bg-blue-400"></div>
+                <div className="w-6 sm:w-8 h-0.5 bg-blue-400"></div>
                 <span className="font-medium text-blue-600">AI 분석</span>
               </div>
             </div>
 
-            <div className="w-24"></div>
+            <div className="hidden lg:block w-24"></div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-4xl px-8 pb-16 mx-auto">
+      <div className="max-w-4xl px-4 sm:px-8 pb-8 sm:pb-16 mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

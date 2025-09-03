@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   BarChart,
   Bar,
@@ -10,7 +9,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { handleApiResponse, safeJsonParse } from "../utils/apiUtils";
+import { safeJsonParse } from "../utils/apiUtils";
 import { DiarySlider } from "../components/DiarySlider";
 
 interface DailyEntry {
@@ -40,16 +39,7 @@ const DashboardPage: React.FC = () => {
   );
   const [playingEntryId, setPlayingEntryId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchDailyEntries();
-    return () => {
-      if (currentAudio) {
-        currentAudio.pause();
-      }
-    };
-  }, []);
-
-  const fetchDailyEntries = async () => {
+  const fetchDailyEntries = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -84,7 +74,16 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchDailyEntries();
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause();
+      }
+    };
+  }, [fetchDailyEntries, currentAudio]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

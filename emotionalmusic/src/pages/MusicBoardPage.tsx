@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface MusicTrack {
@@ -19,7 +19,7 @@ export default function MusicBoardPage() {
     emotion: "우울함"
   });
 
-  const [recommendedTracks, setRecommendedTracks] = useState<MusicTrack[]>([
+  const [recommendedTracks] = useState<MusicTrack[]>([
     {
       id: "1",
       title: "Sad Emotional Music",

@@ -17,13 +17,38 @@ const musicRoutes = require("./src/routes/music");
 const dashboardRoutes = require("./src/routes/dashboard");
 const dailyEntriesRoutes = require("./src/routes/dailyEntries");
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`listening on ${port}`));
 
 // CORS 설정
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://your-vercel-app.vercel.app", // 실제 Vercel URL로 변경
+  "https://*.vercel.app", // Vercel 도메인 패턴
+];
+
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: function (origin, callback) {
+      // origin이 없는 경우 (같은 도메인) 허용
+      if (!origin) return callback(null, true);
+
+      // 허용된 origin 목록에 있는지 확인
+      if (
+        allowedOrigins.some((allowedOrigin) => {
+          if (allowedOrigin.includes("*")) {
+            const pattern = allowedOrigin.replace("*", ".*");
+            return new RegExp(pattern).test(origin);
+          }
+          return origin === allowedOrigin;
+        })
+      ) {
+        callback(null, true);
+      } else {
+        console.log("Blocked origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -36,9 +61,10 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // HTTPS에서는 true로 설정
+      secure: process.env.NODE_ENV === "production", // 프로덕션에서는 HTTPS 필요
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24시간
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 크로스 도메인 허용
     },
   })
 );

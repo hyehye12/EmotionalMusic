@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { useMusicSearch } from "../hooks/useMusicSearch";
 import { getEmotionDescription } from "../utils/emotionAnalyzer";
-import { handleApiResponse, safeJsonParse } from "../utils/apiUtils";
+import { safeJsonParse } from "../utils/apiUtils";
 
 import LoadingSpinner from "../components/LoadingSpinner";
 
@@ -19,9 +19,12 @@ export default function ResultPage() {
   const [isSelectingTodaySong, setIsSelectingTodaySong] = useState(false);
   const [todaySongSelected, setTodaySongSelected] = useState(false);
   const [fromGPTAnalysis, setFromGPTAnalysis] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // URL 파라미터에서 감정을 디코딩
+  const decodedEmotion = emotion ? decodeURIComponent(emotion) : "";
+  
   const { tracks, loading, error, searchTracks } = useMusicSearch(
-    emotion || ""
+    decodedEmotion
   );
 
 
@@ -161,7 +164,7 @@ export default function ResultPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          emotion: emotion,
+          emotion: decodedEmotion,
           track_name: currentTrack.trackName,
           artist_name: currentTrack.artistName,
           album_name: currentTrack.collectionName,
@@ -223,7 +226,7 @@ export default function ResultPage() {
         credentials: "include",
         body: JSON.stringify({
           diary_content: analysisData.diaryContent,
-          detected_emotion: emotion || analysisData.emotion,
+          detected_emotion: decodedEmotion || analysisData.emotion,
           selected_track_name: currentTrack.trackName,
           selected_artist_name: currentTrack.artistName,
           selected_album_name: currentTrack.collectionName,
@@ -311,12 +314,12 @@ export default function ResultPage() {
     };
   }, [currentAudio]);
 
-  if (!emotion) {
+  if (!decodedEmotion) {
     return <Navigate to="/" replace />;
   }
 
   if (loading) {
-    return <LoadingSpinner emotion={emotion} />;
+    return <LoadingSpinner emotion={decodedEmotion} />;
   }
 
   if (error) {
@@ -344,15 +347,15 @@ export default function ResultPage() {
   return (
     <div className="relative min-h-screen font-sans bg-gray-50">
       {/* Main Layout Container */}
-      <div className="px-8 py-12">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-12">
         <div className="mx-auto max-w-7xl">
-          <div className="grid min-h-screen grid-cols-1 gap-12 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:gap-12 lg:grid-cols-2">
             {/* Left Side - Music Player Section */}
             <div className="lg:sticky lg:top-24 lg:h-fit">
-              <div className="p-8 mb-8 modern-card">
+              <div className="p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 modern-card">
                 {/* Currently Playing Track */}
-                <div className="mb-8 text-center">
-                  <div className="relative mx-auto mb-6 vinyl-record">
+                <div className="mb-6 sm:mb-8 text-center">
+                  <div className="relative mx-auto mb-4 sm:mb-6 vinyl-record">
                     {tracks.length > 0 && (
                       <img
                         src={
@@ -365,7 +368,7 @@ export default function ResultPage() {
                           tracks[currentTrackIndex]?.trackName ||
                           "Album artwork"
                         }
-                        className="absolute inset-4 rounded-full object-cover w-[168px] h-[168px]"
+                        className="absolute inset-2 sm:inset-4 rounded-full object-cover w-[120px] h-[120px] sm:w-[168px] sm:h-[168px]"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src =
                             "/default-album.jpg";
@@ -376,31 +379,31 @@ export default function ResultPage() {
 
                   {tracks.length > 0 && (
                     <div>
-                      <h2 className="mb-2 text-3xl font-bold text-gray-900">
+                      <h2 className="mb-2 text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
                         {tracks[currentTrackIndex]?.trackName || "Addict"}
                       </h2>
-                      <p className="mb-4 text-xl text-gray-600">
+                      <p className="mb-4 text-base sm:text-lg lg:text-xl text-gray-600">
                         {tracks[currentTrackIndex]?.artistName || "Silva Hound"}
                       </p>
 
                       {/* Play Controls */}
-                      <div className="flex items-center justify-center mb-6 space-x-4">
+                      <div className="flex items-center justify-center mb-4 sm:mb-6 space-x-3 sm:space-x-4">
                         <button
                           onClick={handlePreviousTrack}
-                          className="flex items-center justify-center w-12 h-12 transition-all rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                          className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 transition-all rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
                           disabled={currentTrackIndex === 0}
                         >
                           ⏮️
                         </button>
                         <button
                           onClick={handlePlayPause}
-                          className="flex items-center justify-center w-16 h-16 text-2xl transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                          className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 text-xl sm:text-2xl transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700"
                         >
                           {isPlaying ? "⏸️" : "▶️"}
                         </button>
                         <button
                           onClick={handleNextTrack}
-                          className="flex items-center justify-center w-12 h-12 transition-all rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+                          className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 transition-all rounded-full bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
                           disabled={currentTrackIndex === tracks.length - 1}
                         >
                           ⏭️
@@ -410,27 +413,27 @@ export default function ResultPage() {
                       {/* Save Option - GPT 분석에서 온 경우에만 표시 */}
                       {fromGPTAnalysis && (
                         <>
-                          <p className="mb-4 text-gray-600">
+                          <p className="mb-3 sm:mb-4 text-sm sm:text-base text-gray-600">
                             이 트랙을 저장하시겠어요?
                           </p>
-                          <div className="flex space-x-3">
+                          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
                             <button
                               onClick={handleOpenItunes}
-                              className="px-6 py-2 transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                              className="px-4 sm:px-6 py-2 text-xs sm:text-sm transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap"
                             >
                               🎵 iTunes에서 보기
                             </button>
                             <button
                               onClick={handleSaveTrack}
                               disabled={isSaving}
-                              className="px-6 py-2 transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-4 sm:px-6 py-2 text-xs sm:text-sm transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                               {isSaving ? "저장 중..." : "💾 저장"}
                             </button>
                             <button
                               onClick={handleSelectTodaySong}
                               disabled={isSelectingTodaySong || todaySongSelected}
-                              className="px-6 py-2 text-white transition-all rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="px-4 sm:px-6 py-2 text-xs sm:text-sm text-white transition-all rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                             >
                               {isSelectingTodaySong
                                 ? "선택 중..."
@@ -447,7 +450,7 @@ export default function ResultPage() {
                         <div className="flex justify-center">
                           <button
                             onClick={handleOpenItunes}
-                            className="px-6 py-2 transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700"
+                            className="px-4 sm:px-6 py-2 text-xs sm:text-sm transition-transform rounded-full bg-blue-600 text-white hover:bg-blue-700"
                           >
                             🎵 iTunes에서 보기
                           </button>
@@ -459,14 +462,14 @@ export default function ResultPage() {
               </div>
 
               {/* Emotion Info */}
-              <div className="p-6 modern-card">
-                <h3 className="mb-3 text-xl font-semibold text-gray-900">
+              <div className="p-4 sm:p-6 modern-card">
+                <h3 className="mb-3 text-lg sm:text-xl font-semibold text-gray-900">
                   감정 분석
                 </h3>
-                <div className="p-4 bg-gray-100 rounded-lg">
-                  <p className="font-medium text-gray-800">"{emotion}"</p>
-                  <p className="mt-2 text-sm text-gray-600">
-                    {getEmotionDescription(emotion, "")}
+                <div className="p-3 sm:p-4 bg-gray-100 rounded-lg">
+                  <p className="font-medium text-sm sm:text-base text-gray-800">"{decodedEmotion}"</p>
+                  <p className="mt-2 text-xs sm:text-sm text-gray-600 leading-relaxed">
+                    {getEmotionDescription(decodedEmotion, "")}
                   </p>
                 </div>
               </div>
@@ -474,9 +477,9 @@ export default function ResultPage() {
 
             {/* Right Side - Playlist Section */}
             <div>
-              <div className="p-6 mb-8 modern-card">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
+              <div className="p-4 sm:p-6 mb-6 sm:mb-8 modern-card">
+                <div className="flex items-center justify-between mb-4 sm:mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
                     추천 트랙
                   </h2>
                 </div>
@@ -561,7 +564,7 @@ export default function ResultPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <button
                   onClick={async () => {
                     // 현재 재생 중인 오디오 정지
@@ -576,19 +579,19 @@ export default function ResultPage() {
                     // 캐시 무시하고 새로 검색
                     await searchTracks(true);
                   }}
-                  className="w-full py-3 font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="w-full py-3 sm:py-4 text-sm sm:text-base font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   🔄 다른 추천가져오기
                 </button>
                 <button
                   onClick={() => navigate("/")}
-                  className="w-full py-3 font-medium text-gray-700 transition-all bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="w-full py-3 sm:py-4 text-sm sm:text-base font-medium text-gray-700 transition-all bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   🤖 새로운 AI 분석
                 </button>
                 <button
                   onClick={handleGoToDashboard}
-                  className="w-full py-3 font-medium text-white transition-all bg-blue-600 hover:bg-blue-700 rounded-lg"
+                  className="w-full py-3 sm:py-4 text-sm sm:text-base font-medium text-white transition-all bg-blue-600 hover:bg-blue-700 rounded-lg"
                 >
                   📊 대시보드 보기
                 </button>

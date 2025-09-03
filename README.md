@@ -117,9 +117,10 @@
 
 | 주요 화면 | 캡처 예시                            |
 | --------- | ------------------------------------ |
-| 홈 화면   | ![home](./assets/home.png)           |
-| 감정 분석 | ![analyze](./assets/analyze.gif)     |
-| 대시보드  | ![dashboard](./assets/dashboard.png) |
+| 홈 화면   | ![home]<img width="2824" height="2190" alt="메인페이지" src="https://github.com/user-attachments/assets/a22738c0-1138-4cc0-9f13-db151c3ff2d8" />           |
+| 감정 분석 | ![analyze]<img width="2824" height="4480" alt="ai 분석 결과 페이지" src="https://github.com/user-attachments/assets/7b0a6692-2263-4cb8-8e37-209bd66532e5" />     |
+| 대시보드  | ![dashboard]<img width="2824" height="5160" alt="대시보드 페이지" src="https://github.com/user-attachments/assets/5363fbbc-01aa-4776-9c1f-22287268bfa4" /> |
+| 음악 추천 | ![music]<img width="1902" height="1176" alt="음악 추천 결과 페이지" src="https://github.com/user-attachments/assets/bf3e874c-a9ca-492b-a1f2-011e53dae89e" /> |
 
 ---
 
@@ -133,8 +134,7 @@
 
 ## 📦 배포 주소 선택
 
-- **프론트엔드:** https://your-frontend.vercel.app
-- **백엔드 API:** https://your-api.render.com
+- 배포 : https://emotional-music.vercel.app
 
 ---
 
@@ -142,7 +142,7 @@
 
 | 이름 | GitHub                                                   |
 | ---- | -------------------------------------------------------- |
-| 혜민 | [github.com/your-github](https://github.com/your-github) |
+| 혜민 | [hyehye12](https://github.com/hyehye12.git) |
 
 ---
 

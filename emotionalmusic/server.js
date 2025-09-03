@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 5000;
 // CORS 설정
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://your-vercel-app.vercel.app", // 실제 Vercel URL로 변경
+  "https://emotional-music.vercel.app", // 실제 Vercel URL로 변경
   "https://*.vercel.app", // Vercel 도메인 패턴
 ];
 

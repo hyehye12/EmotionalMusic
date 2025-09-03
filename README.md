@@ -33,46 +33,75 @@
 ## 🧱 프로젝트 구조
 
 ```bash
-📁 emotionalmusic/
-├── public/                   # 정적 파일 (React 앱)
-│   ├── index.html
-│   ├── manifest.json
-│   └── robots.txt
-├── src/                      # React + TypeScript 프론트엔드
-│   ├── App.tsx              # 메인 라우팅 설정
-│   ├── components/          # UI 컴포넌트
-│   │   ├── Healing.tsx      # 감정 분석 컴포넌트
-│   │   ├── LoadingSpinner.tsx # 로딩 UI
-│   │   └── TrackCard.tsx    # 음악 트랙 카드
-│   ├── pages/               # 페이지 컴포넌트
-│   │   ├── MainPage.tsx     # 메인 홈 페이지
-│   │   ├── ResultPage.tsx   # 음악 추천 결과 페이지
-│   │   ├── GPTAnalysisPage.tsx # GPT 감정 분석 페이지
-│   │   ├── AuthPage.tsx     # 로그인/회원가입
-│   │   ├── DashboardPage.tsx # 대시보드
-│   │   └── MusicBoardPage.tsx # 음악 커뮤니티
-│   ├── hooks/               # 커스텀 React Hooks
-│   │   ├── useAuth.ts       # 인증 상태 관리
-│   │   ├── useDiaryStore.ts # 일기 상태 관리 (Zustand)
-│   │   ├── useGPTAnalysis.ts # GPT 분석 Hook
-│   │   └── useMusicSearch.ts # 음악 검색 Hook
-│   ├── services/            # API 서비스 레이어
-│   │   ├── authService.ts   # 인증 관련 API 호출
-│   │   └── itunes.ts        # iTunes 음악 검색 API
-│   ├── utils/               # 유틸리티 함수
-│   │   ├── emotionAnalyzer.ts # 로컬 감정 분석 로직
-│   │   └── gptService.ts    # GPT API 통신
-│   ├── data/                # 정적 데이터 및 상수
-│   │   ├── emotionConstants.ts # 감정 관련 상수
-│   │   └── emotionData.ts   # 감정별 음악 데이터
-│   ├── styles/              # 스타일링
-│   │   └── index.css        # Tailwind CSS 설정
-│   └── index.tsx            # React 앱 진입점
-├── server.js                # Node.js + Express 백엔드 서버
-├── package.json             # 의존성 및 스크립트 설정
-├── tailwind.config.js       # Tailwind CSS 설정
-├── tsconfig.json           # TypeScript 설정
-└── README.md
+emotionalmusic/                                    # 🎵 프로젝트 루트
+│
+├── 📄 DEPLOYMENT.md                               # 🚀 Vercel 배포 가이드
+├── 📦 package.json                                # 📦 프로젝트 설정 & 의존성
+├── 📦 package-lock.json                           # 🔒 의존성 잠금 파일
+├── 🚀 server.js                                   # 🌐 Express 서버 메인
+├── ⚙️ vercel.json                                 # ☁️ Vercel 배포 설정
+├── �� tailwind.config.js                          # 🎨 Tailwind CSS 설정
+├── ⚙️ postcss.config.js                           # 🔧 PostCSS 설정
+├── 📝 tsconfig.json                               # 📝 TypeScript 설정
+└── 🗄️ supabase-daily-entries.sql                  # 🗄️ Supabase 스키마
+│
+├── 📁 public/                                     # 🌐 정적 자산
+│   ├── 🏠 index.html                              # HTML 템플릿
+│   ├── 🎯 favicon.ico                             # 파비콘
+│   ├── 🖼️ logo192.png                             # 앱 로고
+│   ├── 📄 manifest.json                           # PWA 매니페스트
+│   └── 📄 robots.txt                              # SEO 설정
+│
+└── 📁 src/                                        # ⚛️ React 소스코드
+    │
+    ├── 🚀 App.tsx                                 # 🚀 메인 앱 컴포넌트
+    ├── 🚀 index.tsx                               # 🚀 앱 진입점
+    └── �� react-app-env.d.ts                      # 📝 TypeScript 타입 정의
+    │
+    ├── 📁 components/                             #  재사용 컴포넌트
+    │   ├── 📖 DiarySlider.tsx                     # 📖 일기 슬라이더
+    │   └── ⏳ LoadingSpinner.tsx                  # ⏳ 로딩 스피너
+    │
+    ├── 📁 config/                                 # ⚙️ 앱 설정
+    │   └── 🗄️ supabase.ts                         # 🗄️ Supabase 클라이언트
+    │
+    ├── 📁 data/                                   #  정적 데이터
+    │   ├── 🎭 emotionConstants.ts                 # 🎭 감정 상수
+    │   └── 🎵 emotionData.ts                      # 🎵 감정별 데이터
+    │
+    ├── 📁 hooks/                                  # 🎣 커스텀 훅
+    │   ├── 🔐 useAuth.ts                          # 🔐 인증 훅
+    │   ├── 📖 useDiaryStore.ts                    #  일기 상태 관리
+    │   ├── 🤖 useGPTAnalysis.ts                   #  GPT 분석 훅
+    │   └── 🎵 useMusicSearch.ts                   # 🎵 음악 검색 훅
+    │
+    ├── 📁 pages/                                  #  페이지 컴포넌트
+    │   ├── 🔐 AuthPage.tsx                        #  로그인/회원가입
+    │   ├── 📊 DashboardPage.tsx                   # 📊 대시보드
+    │   ├── �� GPTAnalysisPage.tsx                 #  GPT 분석
+    │   ├── 🏠 MainPage.tsx                        #  메인 페이지
+    │   ├── �� MusicBoardPage.tsx                  # 🎵 음악 커뮤니티
+    │   └── 🎯 ResultPage.tsx                      #  음악 추천 결과
+    │
+    ├── 📁 routes/                                 # ��️ 백엔드 API 라우트
+    │   ├── 🔐 auth.js                             #  인증 API
+    │   ├── 📅 dailyEntries.js                     # 📅 일일 기록 API
+    │   ├── 📊 dashboard.js                        #  대시보드 API
+    │   ├── 📖 diary.js                            #  일기 API
+    │   └── 🎵 music.js                            #  음악 API
+    │
+    ├── 📁 services/                               # 🔧 비즈니스 로직
+    │   ├── 🔐 authService.ts                      #  인증 서비스
+    │   ├── 🎵 itunes.ts                           #  iTunes API
+    │   └── 🗄️ supabaseService.ts                  # 🗄️ Supabase 서비스
+    │
+    ├── 📁 styles/                                 # 🎨 스타일시트
+    │   └── 🎨 index.css                           # 🎨 글로벌 CSS
+    │
+    └── 📁 utils/                                  # 🛠️ 유틸리티
+        ├── 🌐 apiUtils.ts                         #  API 유틸리티
+        ├── �� emotionAnalyzer.ts                  # 🎭 감정 분석
+        └── 🤖 gptService.ts                       #  GPT 서비스
 ```
 
 ---

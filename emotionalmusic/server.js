@@ -17,8 +17,8 @@ const musicRoutes = require("./src/routes/music");
 const dashboardRoutes = require("./src/routes/dashboard");
 const dailyEntriesRoutes = require("./src/routes/dailyEntries");
 
-const port = process.env.PORT || 5000;
-app.listen(port, () => console.log(`listening on ${port}`));
+const app = express();
+const PORT = process.env.PORT || 5000;
 
 // CORS 설정
 const allowedOrigins = [

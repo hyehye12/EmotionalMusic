@@ -2,8 +2,6 @@ const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
 const session = require("express-session");
-const RedisStore = require("connect-redis")(session);
-const redis = require("redis");
 require("dotenv").config();
 
 // Supabase 설정
@@ -69,51 +67,23 @@ app.use(
 );
 app.use(express.json());
 
-// Redis 클라이언트 설정
-let redisClient;
-let redisStore;
-
-if (process.env.NODE_ENV === "production" && process.env.REDIS_URL) {
-  // 프로덕션: Redis 사용
-  redisClient = redis.createClient({
-    url: process.env.REDIS_URL,
-    legacyMode: true,
-  });
-
-  redisClient.connect().catch(console.error);
-  redisStore = new RedisStore({ client: redisClient });
-
-  console.log("✅ Redis 세션 저장소 사용");
-} else {
-  // 메모리 저장소 사용 (Redis 미설정시)
-  if (process.env.NODE_ENV === "production") {
-    console.log(
-      "⚠️  프로덕션에서 메모리 세션 저장소 사용중 (Redis 권장하지만 현재 설정으로 진행)"
-    );
-  } else {
-    console.log("⚠️  개발환경에서 메모리 세션 저장소 사용");
-  }
-}
+// 메모리 세션 저장소 사용 (의도적)
+console.log("📝 메모리 세션 저장소 사용");
 
 // Session 설정
-const sessionConfig = {
-  secret: process.env.SESSION_SECRET || "your-default-secret",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: process.env.NODE_ENV === "production", // 프로덕션에서는 HTTPS 필요
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24시간
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 크로스 도메인 허용
-  },
-};
-
-// Redis가 있으면 사용, 없으면 메모리 저장소 (프로덕션에서 경고 무시)
-if (redisStore) {
-  sessionConfig.store = redisStore;
-}
-
-app.use(session(sessionConfig));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "your-default-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // 프로덕션에서는 HTTPS 필요
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24시간
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 크로스 도메인 허용
+    },
+  })
+);
 
 // 환경변수 (서버에서 관리)
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;

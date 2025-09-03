@@ -23,9 +23,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // MemoryStore 경고 무시 (의도적으로 메모리 저장소 사용)
-process.on('warning', (warning) => {
-  if (warning.name === 'Warning' && warning.message && 
-      warning.message.includes('connect.session() MemoryStore')) {
+process.on("warning", (warning) => {
+  if (
+    warning.name === "Warning" &&
+    warning.message &&
+    warning.message.includes("connect.session() MemoryStore")
+  ) {
     // MemoryStore 경고는 무시 (의도적 사용)
     return;
   }
@@ -36,7 +39,7 @@ process.on('warning', (warning) => {
 const allowedOrigins = [
   "http://localhost:3000",
   "https://emotional-music.vercel.app", // 실제 Vercel URL로 변경
-  "https://*.vercel.app", // Vercel 도메인 패턴
+  "https://emotionalmusic.onrender.com",
 ];
 
 app.use(
@@ -70,23 +73,25 @@ app.use(express.json());
 let redisClient;
 let redisStore;
 
-if (process.env.NODE_ENV === 'production' && process.env.REDIS_URL) {
+if (process.env.NODE_ENV === "production" && process.env.REDIS_URL) {
   // 프로덕션: Redis 사용
   redisClient = redis.createClient({
     url: process.env.REDIS_URL,
-    legacyMode: true
+    legacyMode: true,
   });
-  
+
   redisClient.connect().catch(console.error);
   redisStore = new RedisStore({ client: redisClient });
-  
-  console.log('✅ Redis 세션 저장소 사용');
+
+  console.log("✅ Redis 세션 저장소 사용");
 } else {
   // 메모리 저장소 사용 (Redis 미설정시)
-  if (process.env.NODE_ENV === 'production') {
-    console.log('⚠️  프로덕션에서 메모리 세션 저장소 사용중 (Redis 권장하지만 현재 설정으로 진행)');
+  if (process.env.NODE_ENV === "production") {
+    console.log(
+      "⚠️  프로덕션에서 메모리 세션 저장소 사용중 (Redis 권장하지만 현재 설정으로 진행)"
+    );
   } else {
-    console.log('⚠️  개발환경에서 메모리 세션 저장소 사용');
+    console.log("⚠️  개발환경에서 메모리 세션 저장소 사용");
   }
 }
 

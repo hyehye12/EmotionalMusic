@@ -1,5 +1,5 @@
 // 사용자 인증 및 데이터 관리 서비스
-import { safeJsonParse } from '../utils/apiUtils';
+import { safeJsonParse } from "../utils/apiUtils";
 
 export interface User {
   id: string;
@@ -27,9 +27,9 @@ export interface MoodData {
 
 // 로컬 스토리지 키
 const STORAGE_KEYS = {
-  USER: 'emotional_music_user',
-  DIARY_ENTRIES: 'emotional_music_diary_entries',
-  MOOD_DATA: 'emotional_music_mood_data'
+  USER: "emotional_music_user",
+  DIARY_ENTRIES: "emotional_music_diary_entries",
+  MOOD_DATA: "emotional_music_mood_data",
 };
 
 // 사용자 인증 서비스
@@ -39,67 +39,77 @@ export class AuthService {
   // 로그인
   static async login(email: string, password: string): Promise<User> {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password })
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await safeJsonParse(response);
-        throw new Error(errorData.error || '로그인에 실패했습니다.');
+        throw new Error(errorData.error || "로그인에 실패했습니다.");
       }
 
       const data = await safeJsonParse(response);
       const user: User = {
         id: data.user.id,
         email: data.user.email,
-        name: data.user.email.split('@')[0], // 서버에 name이 없으면 이메일에서 추출
-        createdAt: new Date(data.user.created_at || Date.now())
+        name: data.user.email.split("@")[0], // 서버에 name이 없으면 이메일에서 추출
+        createdAt: new Date(data.user.created_at || Date.now()),
       };
 
       this.currentUser = user;
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       return user;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   }
 
   // 회원가입
-  static async register(email: string, password: string, name: string): Promise<User> {
+  static async register(
+    email: string,
+    password: string,
+    name: string
+  ): Promise<User> {
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password })
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({ email, password }),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await safeJsonParse(response);
-        throw new Error(errorData.error || '회원가입에 실패했습니다.');
+        throw new Error(errorData.error || "회원가입에 실패했습니다.");
       }
 
       const data = await safeJsonParse(response);
       const user: User = {
         id: data.user.id,
         email: data.user.email,
-        name: name || data.user.email.split('@')[0],
-        createdAt: new Date(data.user.created_at || Date.now())
+        name: name || data.user.email.split("@")[0],
+        createdAt: new Date(data.user.created_at || Date.now()),
       };
 
       this.currentUser = user;
       localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
       return user;
     } catch (error) {
-      console.error('Register error:', error);
+      console.error("Register error:", error);
       throw error;
     }
   }
@@ -107,12 +117,12 @@ export class AuthService {
   // 로그아웃
   static async logout(): Promise<void> {
     try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include'
+      await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
+        method: "POST",
+        credentials: "include",
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       this.currentUser = null;
       // 모든 사용자 관련 데이터 삭제
@@ -142,16 +152,18 @@ export class AuthService {
 // 일기 데이터 서비스
 export class DiaryService {
   // 일기 저장
-  static async saveDiaryEntry(entry: Omit<DiaryEntry, 'id' | 'createdAt'>): Promise<DiaryEntry> {
+  static async saveDiaryEntry(
+    entry: Omit<DiaryEntry, "id" | "createdAt">
+  ): Promise<DiaryEntry> {
     const user = AuthService.getCurrentUser();
     if (!user) {
-      throw new Error('로그인이 필요합니다.');
+      throw new Error("로그인이 필요합니다.");
     }
 
     const diaryEntry: DiaryEntry = {
       ...entry,
       id: Date.now().toString(),
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     const entries = this.getDiaryEntries();
@@ -170,42 +182,52 @@ export class DiaryService {
     if (!stored) return [];
 
     const entries: DiaryEntry[] = JSON.parse(stored);
-    return entries.filter(entry => entry.userId === user.id);
+    return entries.filter((entry) => entry.userId === user.id);
   }
 
   // 최근 일기 가져오기
   static getRecentDiaryEntries(limit: number = 7): DiaryEntry[] {
     const entries = this.getDiaryEntries();
     return entries
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
       .slice(0, limit);
   }
 
   // 일기 삭제
   static deleteDiaryEntry(entryId: string): void {
     const entries = this.getDiaryEntries();
-    const filteredEntries = entries.filter(entry => entry.id !== entryId);
-    localStorage.setItem(STORAGE_KEYS.DIARY_ENTRIES, JSON.stringify(filteredEntries));
+    const filteredEntries = entries.filter((entry) => entry.id !== entryId);
+    localStorage.setItem(
+      STORAGE_KEYS.DIARY_ENTRIES,
+      JSON.stringify(filteredEntries)
+    );
   }
 }
 
 // 기분 데이터 서비스
 export class MoodService {
   // 기분 데이터 저장
-  static async saveMoodData(moodData: Omit<MoodData, 'date'>): Promise<MoodData> {
+  static async saveMoodData(
+    moodData: Omit<MoodData, "date">
+  ): Promise<MoodData> {
     const user = AuthService.getCurrentUser();
     if (!user) {
-      throw new Error('로그인이 필요합니다.');
+      throw new Error("로그인이 필요합니다.");
     }
 
     const data: MoodData = {
       ...moodData,
-      date: new Date().toISOString().split('T')[0]
+      date: new Date().toISOString().split("T")[0],
     };
 
     const moodHistory = this.getMoodHistory();
-    const existingIndex = moodHistory.findIndex(item => item.date === data.date);
-    
+    const existingIndex = moodHistory.findIndex(
+      (item) => item.date === data.date
+    );
+
     if (existingIndex >= 0) {
       moodHistory[existingIndex] = data;
     } else {
@@ -232,11 +254,13 @@ export class MoodService {
     const history = this.getMoodHistory();
     const today = new Date();
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    
-    return history.filter(data => {
-      const dataDate = new Date(data.date);
-      return dataDate >= weekAgo && dataDate <= today;
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return history
+      .filter((data) => {
+        const dataDate = new Date(data.date);
+        return dataDate >= weekAgo && dataDate <= today;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 
   // 월간 기분 데이터 가져오기
@@ -244,10 +268,12 @@ export class MoodService {
     const history = this.getMoodHistory();
     const today = new Date();
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-    
-    return history.filter(data => {
-      const dataDate = new Date(data.date);
-      return dataDate >= monthAgo && dataDate <= today;
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    return history
+      .filter((data) => {
+        const dataDate = new Date(data.date);
+        return dataDate >= monthAgo && dataDate <= today;
+      })
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
-} 
+}

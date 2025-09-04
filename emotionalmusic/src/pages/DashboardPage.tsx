@@ -44,9 +44,12 @@ const DashboardPage: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch("/api/daily-entries", {
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/daily-entries`,
+        {
+          credentials: "include",
+        }
+      );
 
       if (response.status === 401) {
         const shouldLogin = window.confirm(
@@ -238,7 +241,6 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="relative min-h-screen font-sans bg-gray-50">
-
       {/* Header */}
       <div className="border-b border-gray-200 bg-white/80">
         <div className="max-w-6xl px-8 py-8 mx-auto">
@@ -257,7 +259,7 @@ const DashboardPage: React.FC = () => {
               <span className="font-medium text-gray-700">
                 안녕하세요, 사용자님
               </span>
-              <div className="flex items-center justify-center w-10 h-10 font-bold text-white rounded-full bg-blue-500">
+              <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-blue-500 rounded-full">
                 U
               </div>
             </div>
@@ -282,7 +284,7 @@ const DashboardPage: React.FC = () => {
             <p className="mb-6 text-gray-600">{error}</p>
             <button
               onClick={fetchDailyEntries}
-              className="px-6 py-3 font-medium soft-button rounded-lg"
+              className="px-6 py-3 font-medium rounded-lg soft-button"
             >
               다시 시도
             </button>
@@ -298,7 +300,7 @@ const DashboardPage: React.FC = () => {
             </p>
             <button
               onClick={() => navigate("/")}
-              className="px-8 py-3 font-medium soft-button rounded-lg"
+              className="px-8 py-3 font-medium rounded-lg soft-button"
             >
               ✏️ 일기 작성하기
             </button>
@@ -438,7 +440,7 @@ const DashboardPage: React.FC = () => {
                   return (
                     <div
                       key={`${stat.emotion}-${index}`}
-                      className="p-4 text-center border border-gray-200 bg-gray-100 rounded-lg"
+                      className="p-4 text-center bg-gray-100 border border-gray-200 rounded-lg"
                     >
                       <div className="mb-2 text-2xl">
                         {emotionEmojis[stat.emotion] || "😐"}
@@ -451,7 +453,7 @@ const DashboardPage: React.FC = () => {
                       </div>
                       {index === 0 && (
                         <div className="mt-2">
-                          <span className="px-2 py-1 text-xs text-blue-800 rounded-full bg-blue-200">
+                          <span className="px-2 py-1 text-xs text-blue-800 bg-blue-200 rounded-full">
                             최다
                           </span>
                         </div>
@@ -468,19 +470,19 @@ const DashboardPage: React.FC = () => {
         <div className="mt-12 text-center">
           <button
             onClick={() => navigate("/")}
-            className="px-8 py-4 mr-4 text-lg font-medium soft-button rounded-lg"
+            className="px-8 py-4 mr-4 text-lg font-medium rounded-lg soft-button"
           >
             ✏️ 새 일기 작성
           </button>
           {/* <button
             onClick={() => navigate("/music-board")}
-            className="px-8 py-4 mr-4 text-lg font-medium text-purple-600 transition-colors border border-purple-200 bg-purple-50 rounded-lg hover:bg-purple-100"
+            className="px-8 py-4 mr-4 text-lg font-medium text-purple-600 transition-colors border border-purple-200 rounded-lg bg-purple-50 hover:bg-purple-100"
           >
             🎵 음악 보드
           </button> */}
           <button
             onClick={fetchDailyEntries}
-            className="px-6 py-4 text-sm font-medium text-gray-600 transition-colors border border-gray-200 bg-gray-50 rounded-lg hover:bg-gray-100"
+            className="px-6 py-4 text-sm font-medium text-gray-600 transition-colors border border-gray-200 rounded-lg bg-gray-50 hover:bg-gray-100"
           >
             🔄 새로고침
           </button>

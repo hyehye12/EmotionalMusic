@@ -17,12 +17,12 @@ const musicRoutes = require("./src/routes/music");
 const dashboardRoutes = require("./src/routes/dashboard");
 const dailyEntriesRoutes = require("./src/routes/dailyEntries");
 
+const app = express();
+const PORT = process.env.PORT || 5000;
+
 app.get("/", (req, res) => {
   res.send("Welcome to the Emotional Music API Server!");
 });
-
-const app = express();
-const PORT = process.env.PORT || 5000;
 
 // CORS 설정
 const allowedOrigins = [

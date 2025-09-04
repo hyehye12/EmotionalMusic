@@ -17,21 +17,12 @@ const musicRoutes = require("./src/routes/music");
 const dashboardRoutes = require("./src/routes/dashboard");
 const dailyEntriesRoutes = require("./src/routes/dailyEntries");
 
+app.get("/", (req, res) => {
+  res.send("Welcome to the Emotional Music API Server!");
+});
+
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-// MemoryStore 경고 무시 (의도적으로 메모리 저장소 사용)
-process.on("warning", (warning) => {
-  if (
-    warning.name === "Warning" &&
-    warning.message &&
-    warning.message.includes("connect.session() MemoryStore")
-  ) {
-    // MemoryStore 경고는 무시 (의도적 사용)
-    return;
-  }
-  console.warn(warning.name, warning.message);
-});
 
 // CORS 설정
 const allowedOrigins = [
@@ -66,9 +57,6 @@ app.use(
   })
 );
 app.use(express.json());
-
-// 메모리 세션 저장소 사용 (의도적)
-console.log("📝 메모리 세션 저장소 사용");
 
 // Session 설정
 app.use(

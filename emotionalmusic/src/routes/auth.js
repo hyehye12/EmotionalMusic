@@ -5,8 +5,8 @@ const { createClient } = require('@supabase/supabase-js');
 const router = express.Router();
 
 // Supabase 설정
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || '';
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
+const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // 유효성 검사 함수들

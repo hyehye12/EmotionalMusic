@@ -6,8 +6,8 @@ require("dotenv").config();
 
 // Supabase 설정
 const { createClient } = require("@supabase/supabase-js");
-const supabaseUrl = process.env.SUPABASE_URL || "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || "";
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || "";
+const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // 라우트 import
@@ -61,7 +61,7 @@ app.use(express.json());
 // Session 설정
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "your-default-secret",
+    secret: process.env.REACT_APP_SESSION_SECRET || "your-default-secret",
     resave: false,
     saveUninitialized: false,
     cookie: {

@@ -6,10 +6,20 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 초기 로드 시 현재 사용자 확인
-    const currentUser = AuthService.getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
+    // 초기 로드 시 서버 세션 확인
+    const checkSession = async () => {
+      try {
+        const user = await AuthService.getCurrentUser();
+        setUser(user);
+      } catch (error) {
+        console.error('Session check error:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {

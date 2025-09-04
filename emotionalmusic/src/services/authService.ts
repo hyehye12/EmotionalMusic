@@ -132,20 +132,46 @@ export class AuthService {
     }
   }
 
-  // 현재 사용자 가져오기
-  static getCurrentUser(): User | null {
-    if (!this.currentUser) {
-      const stored = localStorage.getItem(STORAGE_KEYS.USER);
-      if (stored) {
-        this.currentUser = JSON.parse(stored);
+  // 현재 사용자 가져오기 (서버 세션 확인)
+  static async getCurrentUser(): Promise<User | null> {
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/auth/me`,
+        {
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const userData = await response.json();
+        const user: User = {
+          id: userData.id,
+          email: userData.email,
+          name: userData.email.split('@')[0],
+          createdAt: new Date(userData.created_at || Date.now()),
+        };
+        this.currentUser = user;
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
+        return user;
+      } else {
+        // 세션이 유효하지 않으면 정리
+        this.currentUser = null;
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        localStorage.removeItem(STORAGE_KEYS.DIARY_ENTRIES);
+        localStorage.removeItem(STORAGE_KEYS.MOOD_DATA);
+        return null;
       }
+    } catch (error) {
+      console.error('Session check error:', error);
+      this.currentUser = null;
+      return null;
     }
-    return this.currentUser;
   }
 
   // 로그인 상태 확인
-  static isLoggedIn(): boolean {
-    return this.getCurrentUser() !== null;
+  static async isLoggedIn(): Promise<boolean> {
+    const user = await this.getCurrentUser();
+    return user !== null;
   }
 }
 
@@ -155,7 +181,7 @@ export class DiaryService {
   static async saveDiaryEntry(
     entry: Omit<DiaryEntry, "id" | "createdAt">
   ): Promise<DiaryEntry> {
-    const user = AuthService.getCurrentUser();
+    const user = await AuthService.getCurrentUser();
     if (!user) {
       throw new Error("로그인이 필요합니다.");
     }
@@ -166,7 +192,7 @@ export class DiaryService {
       createdAt: new Date(),
     };
 
-    const entries = this.getDiaryEntries();
+    const entries = await this.getDiaryEntries();
     entries.push(diaryEntry);
     localStorage.setItem(STORAGE_KEYS.DIARY_ENTRIES, JSON.stringify(entries));
 
@@ -174,8 +200,8 @@ export class DiaryService {
   }
 
   // 일기 목록 가져오기
-  static getDiaryEntries(): DiaryEntry[] {
-    const user = AuthService.getCurrentUser();
+  static async getDiaryEntries(): Promise<DiaryEntry[]> {
+    const user = await AuthService.getCurrentUser();
     if (!user) return [];
 
     const stored = localStorage.getItem(STORAGE_KEYS.DIARY_ENTRIES);
@@ -186,8 +212,8 @@ export class DiaryService {
   }
 
   // 최근 일기 가져오기
-  static getRecentDiaryEntries(limit: number = 7): DiaryEntry[] {
-    const entries = this.getDiaryEntries();
+  static async getRecentDiaryEntries(limit: number = 7): Promise<DiaryEntry[]> {
+    const entries = await this.getDiaryEntries();
     return entries
       .sort(
         (a, b) =>
@@ -197,8 +223,8 @@ export class DiaryService {
   }
 
   // 일기 삭제
-  static deleteDiaryEntry(entryId: string): void {
-    const entries = this.getDiaryEntries();
+  static async deleteDiaryEntry(entryId: string): Promise<void> {
+    const entries = await this.getDiaryEntries();
     const filteredEntries = entries.filter((entry) => entry.id !== entryId);
     localStorage.setItem(
       STORAGE_KEYS.DIARY_ENTRIES,
@@ -213,7 +239,7 @@ export class MoodService {
   static async saveMoodData(
     moodData: Omit<MoodData, "date">
   ): Promise<MoodData> {
-    const user = AuthService.getCurrentUser();
+    const user = await AuthService.getCurrentUser();
     if (!user) {
       throw new Error("로그인이 필요합니다.");
     }
@@ -223,7 +249,7 @@ export class MoodService {
       date: new Date().toISOString().split("T")[0],
     };
 
-    const moodHistory = this.getMoodHistory();
+    const moodHistory = await this.getMoodHistory();
     const existingIndex = moodHistory.findIndex(
       (item) => item.date === data.date
     );
@@ -239,8 +265,8 @@ export class MoodService {
   }
 
   // 기분 히스토리 가져오기
-  static getMoodHistory(): MoodData[] {
-    const user = AuthService.getCurrentUser();
+  static async getMoodHistory(): Promise<MoodData[]> {
+    const user = await AuthService.getCurrentUser();
     if (!user) return [];
 
     const stored = localStorage.getItem(STORAGE_KEYS.MOOD_DATA);
@@ -250,8 +276,8 @@ export class MoodService {
   }
 
   // 주간 기분 데이터 가져오기
-  static getWeeklyMoodData(): MoodData[] {
-    const history = this.getMoodHistory();
+  static async getWeeklyMoodData(): Promise<MoodData[]> {
+    const history = await this.getMoodHistory();
     const today = new Date();
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -264,8 +290,8 @@ export class MoodService {
   }
 
   // 월간 기분 데이터 가져오기
-  static getMonthlyMoodData(): MoodData[] {
-    const history = this.getMoodHistory();
+  static async getMonthlyMoodData(): Promise<MoodData[]> {
+    const history = await this.getMoodHistory();
     const today = new Date();
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 

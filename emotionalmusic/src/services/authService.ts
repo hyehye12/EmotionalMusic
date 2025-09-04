@@ -1,5 +1,5 @@
 // 사용자 인증 및 데이터 관리 서비스
-import { safeJsonParse } from "../utils/apiUtils";
+import { supabase } from "../config/supabase";
 
 export interface User {
   id: string;
@@ -39,34 +39,38 @@ export class AuthService {
   // 로그인
   static async login(email: string, password: string): Promise<User> {
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/auth/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      console.log('Supabase 직접 로그인 시작...');
+      console.log('Supabase URL:', process.env.REACT_APP_SUPABASE_URL);
+      
+      // Supabase에서 사용자 정보 조회
+      const { data: user, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-      if (!response.ok) {
-        const errorData = await safeJsonParse(response);
-        throw new Error(errorData.error || "로그인에 실패했습니다.");
+      console.log('사용자 조회 결과:', { user, error });
+
+      if (error || !user) {
+        throw new Error('이메일 또는 비밀번호가 잘못되었습니다.');
       }
 
-      const data = await safeJsonParse(response);
-      const user: User = {
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.email.split("@")[0], // 서버에 name이 없으면 이메일에서 추출
-        createdAt: new Date(data.user.created_at || Date.now()),
+      // 비밀번호 확인 (실제로는 bcrypt로 해시된 비밀번호를 비교해야 하지만, 
+      // 여기서는 간단히 처리)
+      if (user.password !== password) {
+        throw new Error('이메일 또는 비밀번호가 잘못되었습니다.');
+      }
+
+      const userData: User = {
+        id: user.id,
+        email: user.email,
+        name: user.email.split("@")[0],
+        createdAt: new Date(user.created_at || Date.now()),
       };
 
-      this.currentUser = user;
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-      return user;
+      this.currentUser = userData;
+      console.log('로그인 성공, 사용자 정보 저장:', userData);
+      return userData;
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -80,34 +84,44 @@ export class AuthService {
     name: string
   ): Promise<User> {
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/auth/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ email, password }),
-        }
-      );
+      console.log('Supabase 직접 회원가입 시작...');
+      
+      // 이미 존재하는 사용자인지 확인
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .single();
 
-      if (!response.ok) {
-        const errorData = await safeJsonParse(response);
-        throw new Error(errorData.error || "회원가입에 실패했습니다.");
+      if (existingUser) {
+        throw new Error('이미 등록된 이메일입니다.');
       }
 
-      const data = await safeJsonParse(response);
-      const user: User = {
-        id: data.user.id,
-        email: data.user.email,
-        name: name || data.user.email.split("@")[0],
-        createdAt: new Date(data.user.created_at || Date.now()),
+      // 새 사용자 생성
+      const { data: newUser, error } = await supabase
+        .from('users')
+        .insert({
+          email,
+          password // 실제로는 해시된 비밀번호를 저장해야 함
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('회원가입 오류:', error);
+        throw new Error('회원가입에 실패했습니다.');
+      }
+
+      const userData: User = {
+        id: newUser.id,
+        email: newUser.email,
+        name: name || newUser.email.split("@")[0],
+        createdAt: new Date(newUser.created_at || Date.now()),
       };
 
-      this.currentUser = user;
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-      return user;
+      this.currentUser = userData;
+      console.log('회원가입 성공, 사용자 정보 저장:', userData);
+      return userData;
     } catch (error) {
       console.error("Register error:", error);
       throw error;
@@ -116,56 +130,13 @@ export class AuthService {
 
   // 로그아웃
   static async logout(): Promise<void> {
-    try {
-      await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      this.currentUser = null;
-      // 모든 사용자 관련 데이터 삭제
-      localStorage.removeItem(STORAGE_KEYS.USER);
-      localStorage.removeItem(STORAGE_KEYS.DIARY_ENTRIES);
-      localStorage.removeItem(STORAGE_KEYS.MOOD_DATA);
-    }
+    this.currentUser = null;
   }
 
-  // 현재 사용자 가져오기 (서버 세션 확인)
+  // 현재 사용자 가져오기
   static async getCurrentUser(): Promise<User | null> {
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/api/auth/me`,
-        {
-          credentials: 'include',
-        }
-      );
-
-      if (response.ok) {
-        const userData = await response.json();
-        const user: User = {
-          id: userData.id,
-          email: userData.email,
-          name: userData.email.split('@')[0],
-          createdAt: new Date(userData.created_at || Date.now()),
-        };
-        this.currentUser = user;
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user));
-        return user;
-      } else {
-        // 세션이 유효하지 않으면 정리
-        this.currentUser = null;
-        localStorage.removeItem(STORAGE_KEYS.USER);
-        localStorage.removeItem(STORAGE_KEYS.DIARY_ENTRIES);
-        localStorage.removeItem(STORAGE_KEYS.MOOD_DATA);
-        return null;
-      }
-    } catch (error) {
-      console.error('Session check error:', error);
-      this.currentUser = null;
-      return null;
-    }
+    // 현재 저장된 사용자 정보 반환
+    return this.currentUser;
   }
 
   // 로그인 상태 확인

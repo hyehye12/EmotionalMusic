@@ -47,6 +47,8 @@ export default function AuthPage() {
 
       if (isLogin) {
         await login(email, password);
+        // 로그인 성공 후 메인페이지로 이동
+        navigate('/');
       } else {
         // 회원가입 시 추가 유효성 검사
         if (!name.trim()) {
@@ -59,8 +61,9 @@ export default function AuthPage() {
         }
         
         await register(email, password, name);
+        // 회원가입 성공 후 메인페이지로 이동
+        navigate('/');
       }
-      navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : '오류가 발생했습니다.');
     } finally {

@@ -12,12 +12,6 @@ export default function MainPage() {
   const navigate = useNavigate();
   const { setDiaryText: setStoreDiaryText } = useDiaryStore();
   const { user, isLoggedIn, logout } = useAuth();
-  
-  // 디버깅을 위한 로그
-  console.log('MainPage 렌더링 - user:', user);
-  console.log('MainPage 렌더링 - isLoggedIn:', isLoggedIn);
-  console.log('MainPage 렌더링 - user 타입:', typeof user);
-  console.log('MainPage 렌더링 - user 존재 여부:', user !== null);
 
   const handleSubmit = async () => {
     if (!diaryText.trim()) return;

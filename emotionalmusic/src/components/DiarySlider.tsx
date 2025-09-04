@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 interface DailyEntry {
   id: string;
@@ -95,15 +94,7 @@ export const DiarySlider: React.FC<DiarySliderProps> = ({
         </button>
 
         {/* 일기 페이지 */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentEntry.id}
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            transition={{ duration: 0.3 }}
-            className="diary-page modern-card"
-          >
+        <div className="diary-page modern-card">
             {/* 날짜 헤더 - 일기장 스타일 */}
             <div className="relative z-10 p-8 pt-12" style={{ marginLeft: '80px' }}>
               <div className="flex items-center justify-between mb-6">
@@ -220,8 +211,7 @@ export const DiarySlider: React.FC<DiarySliderProps> = ({
                 </div>
               </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
+        </div>
       </div>
 
       {/* 페이지 인디케이터 */}

@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const fetch = require("node-fetch");
-const session = require("express-session");
 require("dotenv").config();
 
 // Supabase 설정
@@ -57,21 +56,6 @@ app.use(
   })
 );
 app.use(express.json());
-
-// Session 설정
-app.use(
-  session({
-    secret: process.env.REACT_APP_SESSION_SECRET || "your-default-secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production", // 프로덕션에서는 HTTPS 필요
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24시간
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 크로스 도메인 허용
-    },
-  })
-);
 
 // 환경변수 (서버에서 관리)
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;

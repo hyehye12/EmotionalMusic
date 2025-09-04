@@ -1,5 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -8,18 +9,10 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// 세션 검증 미들웨어
-const authenticateSession = (req, res, next) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: '로그인이 필요합니다.' });
-  }
-  next();
-};
-
 // 대시보드 데이터 조회
-router.get('/', authenticateSession, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.userId;
     const { days = 30 } = req.query;
 
     // 날짜 범위 설정
@@ -106,9 +99,9 @@ router.get('/', authenticateSession, async (req, res) => {
 });
 
 // 감정 통계 조회
-router.get('/emotions', authenticateSession, async (req, res) => {
+router.get('/emotions', authenticateToken, async (req, res) => {
   try {
-    const userId = req.session.userId;
+    const userId = req.userId;
     const { days = 30 } = req.query;
 
     const fromDate = new Date();

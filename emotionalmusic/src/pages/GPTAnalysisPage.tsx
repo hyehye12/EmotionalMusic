@@ -1,6 +1,5 @@
 import React from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useDiaryAnalysis } from "../hooks/useGPTAnalysis";
 import { safeJsonParse } from "../utils/apiUtils";
 
@@ -75,22 +74,11 @@ export default function GPTAnalysisPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100"></div>
 
         <div className="w-full max-w-lg p-8 text-center sm:p-12 modern-card">
-          <motion.div
-            className="mb-8"
-            animate={{
-              y: [-5, 5, -5],
-              rotate: [0, 2, -2, 0],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
+          <div className="mb-8">
             <div className="flex items-center justify-center w-20 h-20 mx-auto text-3xl text-white bg-blue-500 rounded-full">
               🤖
             </div>
-          </motion.div>
+          </div>
 
           <h2 className="mb-4 text-2xl font-bold text-gray-900 sm:text-3xl">
             AI 분석 진행 중
@@ -99,38 +87,12 @@ export default function GPTAnalysisPage() {
             AI가 당신의 이야기를 분석 중입니다...
           </p>
 
-          {/* Spinning Animation */}
+          {/* Loading Animation */}
           <div className="flex items-center justify-center mb-8">
             <div className="flex space-x-3">
-              <motion.div
-                className="w-3 h-3 bg-blue-400 rounded-full"
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              />
-              <motion.div
-                className="w-3 h-3 bg-blue-500 rounded-full"
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.2,
-                }}
-              />
-              <motion.div
-                className="w-3 h-3 bg-blue-400 rounded-full"
-                animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.4,
-                }}
-              />
+              <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>
+              <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
+              <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
             </div>
           </div>
 
@@ -212,12 +174,7 @@ export default function GPTAnalysisPage() {
 
       {/* Main Content */}
       <div className="max-w-4xl px-4 pb-8 mx-auto sm:px-8 sm:pb-16">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="p-12 mb-12 modern-card"
-        >
+        <div className="p-12 mb-12 modern-card">
           <div className="mb-12 text-center">
             <h2 className="mb-4 text-3xl font-bold text-gray-900">분석 결과</h2>
             <div className="flex items-center justify-center space-x-6 text-gray-600">
@@ -316,7 +273,7 @@ export default function GPTAnalysisPage() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Action Buttons */}
         <div className="space-y-4 text-center">

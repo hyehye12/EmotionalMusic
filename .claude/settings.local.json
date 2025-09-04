@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\routes/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\routes/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\routes/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\routes/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\routes/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\hooks/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\services/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\lib/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\hooks/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

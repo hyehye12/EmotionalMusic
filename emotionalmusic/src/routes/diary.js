@@ -1,5 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -8,16 +9,8 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// 세션 검증 미들웨어
-const authenticateSession = (req, res, next) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: '로그인이 필요합니다.' });
-  }
-  next();
-};
-
 // 일기 생성
-router.post('/', authenticateSession, async (req, res) => {
+router.post('/', authenticateToken, async (req, res) => {
   try {
     const { title, content, emotion } = req.body;
     
@@ -28,7 +21,7 @@ router.post('/', authenticateSession, async (req, res) => {
     const { data: newDiary, error } = await supabase
       .from('diaries')
       .insert({
-        user_id: req.session.userId,
+        user_id: req.userId,
         title,
         content,
         emotion
@@ -49,12 +42,12 @@ router.post('/', authenticateSession, async (req, res) => {
 });
 
 // 사용자의 모든 일기 조회
-router.get('/', authenticateSession, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const { data: diaries, error } = await supabase
       .from('diaries')
       .select('*')
-      .eq('user_id', req.session.userId)
+      .eq('user_id', req.userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -67,13 +60,13 @@ router.get('/', authenticateSession, async (req, res) => {
 });
 
 // 특정 일기 조회
-router.get('/:id', authenticateSession, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { data: diary, error } = await supabase
       .from('diaries')
       .select('*')
       .eq('id', req.params.id)
-      .eq('user_id', req.session.userId)
+      .eq('user_id', req.userId)
       .single();
 
     if (error) {
@@ -91,7 +84,7 @@ router.get('/:id', authenticateSession, async (req, res) => {
 });
 
 // 일기 수정
-router.put('/:id', authenticateSession, async (req, res) => {
+router.put('/:id', authenticateToken, async (req, res) => {
   try {
     const { title, content, emotion } = req.body;
     
@@ -104,7 +97,7 @@ router.put('/:id', authenticateSession, async (req, res) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', req.params.id)
-      .eq('user_id', req.session.userId)
+      .eq('user_id', req.userId)
       .select()
       .single();
 
@@ -126,13 +119,13 @@ router.put('/:id', authenticateSession, async (req, res) => {
 });
 
 // 일기 삭제
-router.delete('/:id', authenticateSession, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const { error } = await supabase
       .from('diaries')
       .delete()
       .eq('id', req.params.id)
-      .eq('user_id', req.session.userId);
+      .eq('user_id', req.userId);
 
     if (error) throw error;
 

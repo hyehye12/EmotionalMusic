@@ -1,5 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -8,16 +9,8 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// 세션 검증 미들웨어
-const authenticateSession = (req, res, next) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: '로그인이 필요합니다.' });
-  }
-  next();
-};
-
 // 음악 추천 저장
-router.post('/recommendations', authenticateSession, async (req, res) => {
+router.post('/recommendations', authenticateToken, async (req, res) => {
   try {
     const { emotion, track_name, artist_name, album_name, preview_url, artwork_url } = req.body;
     
@@ -28,7 +21,7 @@ router.post('/recommendations', authenticateSession, async (req, res) => {
     const { data: recommendation, error } = await supabase
       .from('music_recommendations')
       .insert({
-        user_id: req.session.userId,
+        user_id: req.userId,
         emotion,
         track_name,
         artist_name,
@@ -52,12 +45,12 @@ router.post('/recommendations', authenticateSession, async (req, res) => {
 });
 
 // 사용자의 모든 음악 추천 조회
-router.get('/recommendations', authenticateSession, async (req, res) => {
+router.get('/recommendations', authenticateToken, async (req, res) => {
   try {
     const { data: recommendations, error } = await supabase
       .from('music_recommendations')
       .select('*')
-      .eq('user_id', req.session.userId)
+      .eq('user_id', req.userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -70,12 +63,12 @@ router.get('/recommendations', authenticateSession, async (req, res) => {
 });
 
 // 특정 감정의 음악 추천 조회
-router.get('/recommendations/emotion/:emotion', authenticateSession, async (req, res) => {
+router.get('/recommendations/emotion/:emotion', authenticateToken, async (req, res) => {
   try {
     const { data: recommendations, error } = await supabase
       .from('music_recommendations')
       .select('*')
-      .eq('user_id', req.session.userId)
+      .eq('user_id', req.userId)
       .eq('emotion', req.params.emotion)
       .order('created_at', { ascending: false });
 
@@ -89,13 +82,13 @@ router.get('/recommendations/emotion/:emotion', authenticateSession, async (req,
 });
 
 // 음악 추천 삭제
-router.delete('/recommendations/:id', authenticateSession, async (req, res) => {
+router.delete('/recommendations/:id', authenticateToken, async (req, res) => {
   try {
     const { error } = await supabase
       .from('music_recommendations')
       .delete()
       .eq('id', req.params.id)
-      .eq('user_id', req.session.userId);
+      .eq('user_id', req.userId);
 
     if (error) throw error;
 

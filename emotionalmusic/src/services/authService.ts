@@ -27,6 +27,7 @@ export interface MoodData {
 
 // 로컬 스토리지 키
 const STORAGE_KEYS = {
+  TOKEN: "emotional_music_token",
   USER: "emotional_music_user",
   DIARY_ENTRIES: "emotional_music_diary_entries",
   MOOD_DATA: "emotional_music_mood_data",
@@ -36,39 +37,53 @@ const STORAGE_KEYS = {
 export class AuthService {
   private static currentUser: User | null = null;
 
+  // API 호출에 사용할 헤더 생성
+  private static getAuthHeaders(): HeadersInit {
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    if (!token) {
+      return { 'Content-Type': 'application/json' };
+    }
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    };
+  }
+
   // 로그인
   static async login(email: string, password: string): Promise<User> {
     try {
-      console.log('Supabase 직접 로그인 시작...');
-      console.log('Supabase URL:', process.env.REACT_APP_SUPABASE_URL);
+      console.log('Supabase + JWT 로그인 시작...');
       
-      // Supabase에서 사용자 정보 조회
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
+      // Supabase Auth를 사용한 로그인
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      console.log('사용자 조회 결과:', { user, error });
-
-      if (error || !user) {
-        throw new Error('이메일 또는 비밀번호가 잘못되었습니다.');
+      if (error) {
+        throw new Error(error.message || '로그인에 실패했습니다.');
       }
 
-      // 비밀번호 확인 (실제로는 bcrypt로 해시된 비밀번호를 비교해야 하지만, 
-      // 여기서는 간단히 처리)
-      if (user.password !== password) {
-        throw new Error('이메일 또는 비밀번호가 잘못되었습니다.');
+      if (!data.user || !data.session) {
+        throw new Error('로그인 데이터가 없습니다.');
+      }
+
+      console.log('Supabase 로그인 성공:', data);
+
+      // Supabase JWT 토큰을 localStorage에 저장
+      if (data.session.access_token) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, data.session.access_token);
       }
 
       const userData: User = {
-        id: user.id,
-        email: user.email,
-        name: user.email.split("@")[0],
-        createdAt: new Date(user.created_at || Date.now()),
+        id: data.user.id,
+        email: data.user.email || '',
+        name: data.user.user_metadata?.name || data.user.email?.split("@")[0] || '',
+        createdAt: new Date(data.user.created_at || Date.now()),
       };
 
       this.currentUser = userData;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
       console.log('로그인 성공, 사용자 정보 저장:', userData);
       return userData;
     } catch (error) {
@@ -84,42 +99,48 @@ export class AuthService {
     name: string
   ): Promise<User> {
     try {
-      console.log('Supabase 직접 회원가입 시작...');
+      console.log('Supabase + JWT 회원가입 시작...');
       
-      // 이미 존재하는 사용자인지 확인
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', email)
-        .single();
-
-      if (existingUser) {
-        throw new Error('이미 등록된 이메일입니다.');
-      }
-
-      // 새 사용자 생성
-      const { data: newUser, error } = await supabase
-        .from('users')
-        .insert({
-          email,
-          password // 실제로는 해시된 비밀번호를 저장해야 함
-        })
-        .select()
-        .single();
+      // Supabase Auth를 사용한 회원가입
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name,
+          }
+        }
+      });
 
       if (error) {
-        console.error('회원가입 오류:', error);
-        throw new Error('회원가입에 실패했습니다.');
+        throw new Error(error.message || '회원가입에 실패했습니다.');
+      }
+
+      if (!data.user) {
+        throw new Error('회원가입 데이터가 없습니다.');
+      }
+
+      console.log('Supabase 회원가입 성공:', data);
+
+      // 이메일 확인이 필요한 경우를 위한 처리
+      if (!data.session) {
+        throw new Error('이메일 확인이 필요합니다. 이메일을 확인해주세요.');
+      }
+
+      // Supabase JWT 토큰을 localStorage에 저장
+      if (data.session.access_token) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, data.session.access_token);
       }
 
       const userData: User = {
-        id: newUser.id,
-        email: newUser.email,
-        name: name || newUser.email.split("@")[0],
-        createdAt: new Date(newUser.created_at || Date.now()),
+        id: data.user.id,
+        email: data.user.email || '',
+        name: name || data.user.email?.split("@")[0] || '',
+        createdAt: new Date(data.user.created_at || Date.now()),
       };
 
       this.currentUser = userData;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
       console.log('회원가입 성공, 사용자 정보 저장:', userData);
       return userData;
     } catch (error) {
@@ -130,19 +151,65 @@ export class AuthService {
 
   // 로그아웃
   static async logout(): Promise<void> {
-    this.currentUser = null;
+    try {
+      // Supabase Auth 로그아웃
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      // 로컬 스토리지에서 토큰과 사용자 정보 제거
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      this.currentUser = null;
+    }
   }
 
   // 현재 사용자 가져오기
   static async getCurrentUser(): Promise<User | null> {
-    // 현재 저장된 사용자 정보 반환
-    return this.currentUser;
+    try {
+      // Supabase에서 현재 세션 확인
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session || !session.user) {
+        // 세션이 없으면 로컬 스토리지 정리
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER);
+        this.currentUser = null;
+        return null;
+      }
+
+      // JWT 토큰을 localStorage에 저장 (갱신된 토큰이 있을 수 있음)
+      if (session.access_token) {
+        localStorage.setItem(STORAGE_KEYS.TOKEN, session.access_token);
+      }
+
+      const userData: User = {
+        id: session.user.id,
+        email: session.user.email || '',
+        name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || '',
+        createdAt: new Date(session.user.created_at || Date.now()),
+      };
+
+      this.currentUser = userData;
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+      return userData;
+    } catch (error) {
+      console.error("Get current user error:", error);
+      // 오류 발생 시 로그아웃 처리
+      this.logout();
+      return null;
+    }
   }
 
   // 로그인 상태 확인
   static async isLoggedIn(): Promise<boolean> {
     const user = await this.getCurrentUser();
     return user !== null;
+  }
+
+  // 외부에서 사용할 수 있는 인증 헤더 생성 메서드
+  static getPublicAuthHeaders(): HeadersInit {
+    return this.getAuthHeaders();
   }
 }
 

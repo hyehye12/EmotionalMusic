@@ -1,5 +1,6 @@
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
+const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -8,223 +9,222 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// 세션 검증 미들웨어
-const authenticateSession = (req, res, next) => {
-  if (!req.session.userId) {
-    return res.status(401).json({ error: '로그인이 필요합니다.' });
-  }
-  next();
-};
-
-// 오늘의 엔트리 생성 또는 업데이트
-router.post('/', authenticateSession, async (req, res) => {
+// 일기 목록 조회
+router.get('/', authenticateToken, async (req, res) => {
   try {
-    const {
-      diary_content,
-      detected_emotion,
-      selected_track_name,
-      selected_artist_name,
-      selected_album_name,
-      selected_preview_url,
-      selected_artwork_url,
-      selected_track_view_url,
-      ai_analysis,
-      ai_advice,
-      ai_encouragement
-    } = req.body;
-    
-    if (!diary_content || !detected_emotion || !selected_track_name || !selected_artist_name) {
-      return res.status(400).json({ error: '필수 정보가 누락되었습니다.' });
-    }
-
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD 형식
-
-    // 오늘 날짜의 기존 엔트리가 있는지 확인
-    const { data: existingEntry } = await supabase
-      .from('daily_entries')
-      .select('*')
-      .eq('user_id', req.session.userId)
-      .eq('date', today)
-      .single();
-
-    let result;
-    
-    if (existingEntry) {
-      // 기존 엔트리 업데이트
-      const { data, error } = await supabase
-        .from('daily_entries')
-        .update({
-          diary_content,
-          detected_emotion,
-          selected_track_name,
-          selected_artist_name,
-          selected_album_name,
-          selected_preview_url,
-          selected_artwork_url,
-          selected_track_view_url,
-          ai_analysis,
-          ai_advice,
-          ai_encouragement,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingEntry.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      result = data;
-    } else {
-      // 새 엔트리 생성
-      const { data, error } = await supabase
-        .from('daily_entries')
-        .insert({
-          user_id: req.session.userId,
-          date: today,
-          diary_content,
-          detected_emotion,
-          selected_track_name,
-          selected_artist_name,
-          selected_album_name,
-          selected_preview_url,
-          selected_artwork_url,
-          selected_track_view_url,
-          ai_analysis,
-          ai_advice,
-          ai_encouragement
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      result = data;
-    }
-
-    res.status(201).json({
-      message: '오늘의 엔트리가 저장되었습니다.',
-      entry: result
-    });
-  } catch (error) {
-    console.error('Daily entry save error:', error);
-    res.status(500).json({ error: '엔트리 저장 중 오류가 발생했습니다.' });
-  }
-});
-
-// 사용자의 모든 일별 엔트리 조회
-router.get('/', authenticateSession, async (req, res) => {
-  try {
-    const { limit = 30, offset = 0 } = req.query;
-
     const { data: entries, error } = await supabase
-      .from('daily_entries')
+      .from('diaries')
       .select('*')
-      .eq('user_id', req.session.userId)
-      .order('date', { ascending: false })
-      .range(offset, offset + limit - 1);
+      .eq('user_id', req.userId)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
-    res.json(entries || []);
+    res.json(entries);
   } catch (error) {
-    console.error('Daily entries fetch error:', error);
-    res.status(500).json({ error: '엔트리를 가져올 수 없습니다.' });
+    console.error('일기 목록 조회 오류:', error);
+    res.status(500).json({ error: '일기 목록을 가져올 수 없습니다.' });
   }
 });
 
-// ID로 엔트리 조회 (백워드 호환성)
-router.get('/by-id/:id', authenticateSession, async (req, res) => {
+// 특정 일기 조회
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
 
     const { data: entry, error } = await supabase
-      .from('daily_entries')
+      .from('diaries')
       .select('*')
-      .eq('user_id', req.session.userId)
       .eq('id', id)
+      .eq('user_id', req.userId)
       .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: '해당 엔트리를 찾을 수 없습니다.' });
-      }
-      throw error;
-    }
-
-    res.json(entry);
-  } catch (error) {
-    console.error('Daily entry fetch by ID error:', error);
-    res.status(500).json({ error: '엔트리를 가져올 수 없습니다.' });
-  }
-});
-
-// 특정 날짜의 엔트리 조회
-router.get('/:date', authenticateSession, async (req, res) => {
-  try {
-    const { date } = req.params;
-
-    const { data: entry, error } = await supabase
-      .from('daily_entries')
-      .select('*')
-      .eq('user_id', req.session.userId)
-      .eq('date', date)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: '해당 날짜의 엔트리를 찾을 수 없습니다.' });
-      }
-      throw error;
-    }
-
-    res.json(entry);
-  } catch (error) {
-    console.error('Daily entry fetch error:', error);
-    res.status(500).json({ error: '엔트리를 가져올 수 없습니다.' });
-  }
-});
-
-// 오늘의 엔트리 조회
-router.get('/today/entry', authenticateSession, async (req, res) => {
-  try {
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data: entry, error } = await supabase
-      .from('daily_entries')
-      .select('*')
-      .eq('user_id', req.session.userId)
-      .eq('date', today)
-      .single();
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return res.json({ entry: null, message: '오늘의 엔트리가 없습니다.' });
-      }
-      throw error;
-    }
-
-    res.json({ entry });
-  } catch (error) {
-    console.error('Today entry fetch error:', error);
-    res.status(500).json({ error: '오늘의 엔트리를 가져올 수 없습니다.' });
-  }
-});
-
-// 엔트리 삭제
-router.delete('/:date', authenticateSession, async (req, res) => {
-  try {
-    const { date } = req.params;
-
-    const { error } = await supabase
-      .from('daily_entries')
-      .delete()
-      .eq('user_id', req.session.userId)
-      .eq('date', date);
 
     if (error) throw error;
 
-    res.json({ message: '엔트리가 삭제되었습니다.' });
+    res.json(entry);
   } catch (error) {
-    console.error('Daily entry deletion error:', error);
-    res.status(500).json({ error: '엔트리 삭제 중 오류가 발생했습니다.' });
+    console.error('일기 조회 오류:', error);
+    res.status(500).json({ error: '일기를 가져올 수 없습니다.' });
+  }
+});
+
+// 일기 생성
+router.post('/', authenticateToken, async (req, res) => {
+  try {
+    const { title, content, emotion } = req.body;
+
+    if (!title || !content || !emotion) {
+      return res.status(400).json({ error: '제목, 내용, 감정을 모두 입력해주세요.' });
+    }
+
+    const { data: entry, error } = await supabase
+      .from('diaries')
+      .insert({
+        user_id: req.userId,
+        title,
+        content,
+        emotion
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json(entry);
+  } catch (error) {
+    console.error('일기 생성 오류:', error);
+    res.status(500).json({ error: '일기를 저장할 수 없습니다.' });
+  }
+});
+
+// 일기 수정
+router.put('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, emotion } = req.body;
+
+    const { data: entry, error } = await supabase
+      .from('diaries')
+      .update({
+        title,
+        content,
+        emotion,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('user_id', req.userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(entry);
+  } catch (error) {
+    console.error('일기 수정 오류:', error);
+    res.status(500).json({ error: '일기를 수정할 수 없습니다.' });
+  }
+});
+
+// 일기 삭제
+router.delete('/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('diaries')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', req.userId);
+
+    if (error) throw error;
+
+    res.json({ message: '일기가 삭제되었습니다.' });
+  } catch (error) {
+    console.error('일기 삭제 오류:', error);
+    res.status(500).json({ error: '일기를 삭제할 수 없습니다.' });
+  }
+});
+
+// 최근 일기 조회 (7일)
+router.get('/recent/week', authenticateToken, async (req, res) => {
+  try {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const { data: entries, error } = await supabase
+      .from('diaries')
+      .select('*')
+      .eq('user_id', req.userId)
+      .gte('created_at', weekAgo.toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(entries);
+  } catch (error) {
+    console.error('최근 일기 조회 오류:', error);
+    res.status(500).json({ error: '최근 일기를 가져올 수 없습니다.' });
+  }
+});
+
+// 월별 일기 조회
+router.get('/month/:year/:month', authenticateToken, async (req, res) => {
+  try {
+    const { year, month } = req.params;
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const { data: entries, error } = await supabase
+      .from('diaries')
+      .select('*')
+      .eq('user_id', req.userId)
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(entries);
+  } catch (error) {
+    console.error('월별 일기 조회 오류:', error);
+    res.status(500).json({ error: '월별 일기를 가져올 수 없습니다.' });
+  }
+});
+
+// 감정별 일기 조회
+router.get('/emotion/:emotion', authenticateToken, async (req, res) => {
+  try {
+    const { emotion } = req.params;
+
+    const { data: entries, error } = await supabase
+      .from('diaries')
+      .select('*')
+      .eq('user_id', req.userId)
+      .eq('emotion', emotion)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(entries);
+  } catch (error) {
+    console.error('감정별 일기 조회 오류:', error);
+    res.status(500).json({ error: '감정별 일기를 가져올 수 없습니다.' });
+  }
+});
+
+// 일기 통계 조회
+router.get('/stats/overview', authenticateToken, async (req, res) => {
+  try {
+    const { data: entries, error } = await supabase
+      .from('diaries')
+      .select('emotion, created_at')
+      .eq('user_id', req.userId);
+
+    if (error) throw error;
+
+    // 감정별 통계
+    const emotionStats = {};
+    const monthlyStats = {};
+
+    entries.forEach(entry => {
+      // 감정별 카운트
+      emotionStats[entry.emotion] = (emotionStats[entry.emotion] || 0) + 1;
+
+      // 월별 카운트
+      const date = new Date(entry.created_at);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      monthlyStats[monthKey] = (monthlyStats[monthKey] || 0) + 1;
+    });
+
+    res.json({
+      totalEntries: entries.length,
+      emotionStats,
+      monthlyStats,
+      recentEntries: entries.slice(0, 5)
+    });
+  } catch (error) {
+    console.error('일기 통계 조회 오류:', error);
+    res.status(500).json({ error: '일기 통계를 가져올 수 없습니다.' });
   }
 });
 

@@ -1,14 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+// 임시로 실제 Supabase 정보를 입력하세요
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://YOUR_PROJECT_ID.supabase.co';
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'YOUR_ANON_KEY_HERE';
 
 console.log('환경 변수 확인:');
 console.log('REACT_APP_SUPABASE_URL:', supabaseUrl);
 console.log('REACT_APP_SUPABASE_ANON_KEY:', supabaseAnonKey ? '설정됨' : '설정되지 않음');
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please set REACT_APP_SUPABASE_URL and REACT_APP_SUPABASE_ANON_KEY');
+if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('YOUR_PROJECT_ID') || supabaseAnonKey.includes('YOUR_ANON_KEY')) {
+  throw new Error('Please replace YOUR_PROJECT_ID and YOUR_ANON_KEY_HERE with actual Supabase values');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

@@ -5,10 +5,12 @@ import { getEmotionDescription } from "../utils/emotionAnalyzer";
 import { safeJsonParse } from "../utils/apiUtils";
 
 import LoadingSpinner from "../components/LoadingSpinner";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function ResultPage() {
   const { emotion } = useParams<{ emotion: string }>();
   const navigate = useNavigate();
+  const { session } = useAuth();
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(
@@ -160,6 +162,7 @@ export default function ResultPage() {
         {
           method: "POST",
           headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
             "Content-Type": "application/json",
           },
           credentials: "include",
@@ -224,6 +227,7 @@ export default function ResultPage() {
         {
           method: "POST",
           headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
             "Content-Type": "application/json",
           },
           credentials: "include",

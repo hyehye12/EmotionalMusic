@@ -27,7 +27,11 @@
       "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
       "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
       "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
-      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)"
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)",
+      "Read(/C:\\Users\\hm\\dev\\projects\\EmotionalMusic\\emotionalmusic\\src\\pages/**)"
     ],
     "deny": [],
     "ask": []

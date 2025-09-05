@@ -2,10 +2,12 @@ import React from "react";
 import { useParams, useNavigate, Navigate } from "react-router-dom";
 import { useDiaryAnalysis } from "../hooks/useGPTAnalysis";
 import { safeJsonParse } from "../utils/apiUtils";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function GPTAnalysisPage() {
   const { diaryText } = useParams<{ diaryText: string }>();
   const navigate = useNavigate();
+  const { session } = useAuth();
   const decodedDiaryText = diaryText ? decodeURIComponent(diaryText) : "";
   const { analysis, loading, error, retry } =
     useDiaryAnalysis(decodedDiaryText);
@@ -25,6 +27,10 @@ export default function GPTAnalysisPage() {
         const response = await fetch(
           `${process.env.REACT_APP_API_URL}/api/daily-entries/today/entry`,
           {
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`,
+              'Content-Type': 'application/json',
+            },
             credentials: "include",
           }
         );

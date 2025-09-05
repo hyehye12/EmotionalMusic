@@ -5,10 +5,14 @@ import { useDiaryStore } from "../hooks/useDiaryStore";
 import { useAuth } from "../contexts/AuthContext";
 import { DiaryService, MoodService } from "../services/authService";
 import { EMOTION_SCORES } from "../data/emotionConstants";
+import MusicLoadingPage from "../components/MusicLoadingPage";
+import AnalysisLoadingPage from "../components/AnalysisLoadingPage";
 
 export default function MainPage() {
   const [diaryText, setDiaryText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isGPTAnalyzing, setIsGPTAnalyzing] = useState(false);
+  const [analyzedEmotion, setAnalyzedEmotion] = useState<string>("");
   const navigate = useNavigate();
   const { setDiaryText: setStoreDiaryText } = useDiaryStore();
   const { user, isLoggedIn, signOut } = useAuth();
@@ -17,9 +21,9 @@ export default function MainPage() {
     if (!diaryText.trim()) return;
 
     setIsAnalyzing(true);
-
     setStoreDiaryText(diaryText);
     const emotion = analyzeEmotion(diaryText);
+    setAnalyzedEmotion(emotion);
 
     if (isLoggedIn && user) {
       try {
@@ -44,15 +48,29 @@ export default function MainPage() {
     setTimeout(() => {
       setIsAnalyzing(false);
       navigate(`/result/${encodeURIComponent(emotion)}`);
-    }, 1500);
+    }, 2000);
   };
 
   const handleGPTAnalysis = () => {
     if (!diaryText.trim()) return;
 
+    setIsGPTAnalyzing(true);
     setStoreDiaryText(diaryText);
-    navigate(`/analysis/${encodeURIComponent(diaryText)}`);
+    
+    setTimeout(() => {
+      setIsGPTAnalyzing(false);
+      navigate(`/analysis/${encodeURIComponent(diaryText)}`);
+    }, 1500);
   };
+
+  // Show loading pages
+  if (isAnalyzing) {
+    return <MusicLoadingPage emotion={analyzedEmotion} />;
+  }
+
+  if (isGPTAnalyzing) {
+    return <AnalysisLoadingPage />;
+  }
 
   return (
     <div className="relative min-h-screen font-sans bg-gray-50">
@@ -139,22 +157,15 @@ export default function MainPage() {
             <div className="space-y-3">
               <button
                 onClick={handleSubmit}
-                disabled={!diaryText.trim() || isAnalyzing}
+                disabled={!diaryText.trim() || isAnalyzing || isGPTAnalyzing}
                 className="w-full py-3 sm:py-4 text-sm sm:text-base font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isAnalyzing ? (
-                  <div className="flex items-center justify-center">
-                    <div className="w-4 h-4 sm:w-5 sm:h-5 mr-2 border-2 border-white rounded-full border-t-transparent animate-spin"></div>
-                    감정 분석 중...
-                  </div>
-                ) : (
-                  <>🎵 음악 추천 받기</>
-                )}
+                🎵 음악 추천 받기
               </button>
 
               <button
                 onClick={handleGPTAnalysis}
-                disabled={!diaryText.trim()}
+                disabled={!diaryText.trim() || isAnalyzing || isGPTAnalyzing}
                 className="w-full py-3 sm:py-4 text-sm sm:text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 🤖 AI 감정 분석 & 조언

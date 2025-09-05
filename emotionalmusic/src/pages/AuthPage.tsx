@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -10,7 +10,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login, register } = useAuth();
+  const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
   const validateEmail = (email: string): boolean => {
@@ -46,7 +46,10 @@ export default function AuthPage() {
       }
 
       if (isLogin) {
-        await login(email, password);
+        const { user, error: loginError } = await signIn(email, password);
+        if (loginError) {
+          throw new Error(loginError.message || '로그인에 실패했습니다.');
+        }
         // 로그인 성공 후 메인페이지로 이동
         navigate('/');
       } else {
@@ -60,7 +63,16 @@ export default function AuthPage() {
           throw new Error(passwordValidation.message);
         }
         
-        await register(email, password, name);
+        const { user, error: signUpError } = await signUp(email, password, name);
+        if (signUpError) {
+          throw new Error(signUpError.message || '회원가입에 실패했습니다.');
+        }
+        
+        // 이메일 확인이 필요한 경우
+        if (!user?.email_confirmed_at) {
+          throw new Error('이메일 확인이 필요합니다. 이메일을 확인해주세요.');
+        }
+        
         // 회원가입 성공 후 메인페이지로 이동
         navigate('/');
       }

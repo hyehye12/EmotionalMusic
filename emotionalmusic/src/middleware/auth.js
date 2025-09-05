@@ -19,28 +19,32 @@ const authenticateToken = async (req, res, next) => {
   }
 
   try {
-    // Supabase JWT 토큰 검증
+    // 1차: JWT 시크릿으로 직접 검증
     if (SUPABASE_JWT_SECRET) {
-      // JWT 시크릿이 있으면 직접 검증
       const decoded = jwt.verify(token, SUPABASE_JWT_SECRET);
       req.userId = decoded.sub; // Supabase는 사용자 ID를 'sub'에 저장
       req.userEmail = decoded.email;
-      next();
-    } else {
-      // Supabase API를 통한 토큰 검증
-      const { data: { user }, error } = await supabase.auth.getUser(token);
-      
-      if (error || !user) {
-        return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
-      }
-      
-      req.userId = user.id;
-      req.userEmail = user.email;
-      next();
+      return next();
     }
+
+    // 2차: Supabase API로 검증 (fallback)
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error || !user) {
+      return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
+    }
+    
+    req.userId = user.id;
+    req.userEmail = user.email;
+    next();
   } catch (error) {
-    console.error('Token verification error:', error);
-    return res.status(403).json({ error: '유효하지 않은 토큰입니다.' });
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(403).json({ error: '잘못된 토큰 형식입니다.' });
+    }
+    if (error.name === 'TokenExpiredError') {
+      return res.status(403).json({ error: '토큰이 만료되었습니다.' });
+    }
+    return res.status(403).json({ error: '토큰 검증에 실패했습니다.' });
   }
 };
 

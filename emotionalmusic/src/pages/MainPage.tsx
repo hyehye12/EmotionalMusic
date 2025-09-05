@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { analyzeEmotion } from "../utils/emotionAnalyzer";
 import { useDiaryStore } from "../hooks/useDiaryStore";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../contexts/AuthContext";
 import { DiaryService, MoodService } from "../services/authService";
 import { EMOTION_SCORES } from "../data/emotionConstants";
 
@@ -11,7 +11,7 @@ export default function MainPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const navigate = useNavigate();
   const { setDiaryText: setStoreDiaryText } = useDiaryStore();
-  const { user, isLoggedIn, logout } = useAuth();
+  const { user, isLoggedIn, signOut } = useAuth();
 
   const handleSubmit = async () => {
     if (!diaryText.trim()) return;
@@ -79,7 +79,7 @@ export default function MainPage() {
             <div className="flex flex-row lg:flex-col gap-3 lg:space-y-3">
               {isLoggedIn ? (
                 <>
-                  <span className="text-gray-700 text-xs sm:text-sm px-2 py-1 lg:py-0">안녕하세요, {user?.name}님!</span>
+                  <span className="text-gray-700 text-xs sm:text-sm px-2 py-1 lg:py-0">안녕하세요, {user?.user_metadata?.name || user?.email?.split('@')[0]}님!</span>
                   <button
                     onClick={() => navigate("/dashboard")}
                     className="flex-1 lg:flex-none px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
@@ -87,7 +87,7 @@ export default function MainPage() {
                     📊 대시보드
                   </button>
                   <button
-                    onClick={logout}
+                    onClick={() => signOut()}
                     className="flex-1 lg:flex-none px-4 sm:px-6 py-2 text-xs sm:text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors whitespace-nowrap"
                   >
                     로그아웃

@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { safeJsonParse } from "../utils/apiUtils";
 import { DiarySlider } from "../components/DiarySlider";
+import { useAuth } from "../contexts/AuthContext";
 
 interface DailyEntry {
   id: string;
@@ -31,6 +32,7 @@ interface DailyEntry {
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, session, isLoggedIn, loading: authLoading } = useAuth();
   const [dailyEntries, setDailyEntries] = useState<DailyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +42,11 @@ const DashboardPage: React.FC = () => {
   const [playingEntryId, setPlayingEntryId] = useState<string | null>(null);
 
   const fetchDailyEntries = useCallback(async () => {
+    if (!session?.access_token) {
+      console.log('No access token available');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -47,6 +54,10 @@ const DashboardPage: React.FC = () => {
       const response = await fetch(
         `${process.env.REACT_APP_API_URL}/api/daily-entries`,
         {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
           credentials: "include",
         }
       );
@@ -77,16 +88,31 @@ const DashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [navigate]);
+  }, [navigate, session?.access_token]);
 
   useEffect(() => {
-    fetchDailyEntries();
+    // 인증이 로딩 중이거나 로그인되지 않은 경우 대기
+    if (authLoading) return;
+    
+    if (!isLoggedIn) {
+      navigate('/auth');
+      return;
+    }
+    
+    // 세션이 있을 때만 데이터 가져오기
+    if (session?.access_token) {
+      fetchDailyEntries();
+    }
+  }, [authLoading, isLoggedIn, session?.access_token]);
+
+  // 오디오 정리용 별도 useEffect
+  useEffect(() => {
     return () => {
       if (currentAudio) {
         currentAudio.pause();
       }
     };
-  }, [fetchDailyEntries, currentAudio]);
+  }, [currentAudio]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -269,7 +295,7 @@ const DashboardPage: React.FC = () => {
 
       <div className="max-w-6xl px-8 py-16 mx-auto">
         {/* Main Content */}
-        {loading ? (
+        {authLoading || loading ? (
           <div className="p-12 mb-12 text-center modern-card">
             <div className="mb-4 text-4xl">🔄</div>
             <h2 className="mb-4 text-2xl font-bold text-gray-900">

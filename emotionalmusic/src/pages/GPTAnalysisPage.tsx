@@ -66,6 +66,8 @@ export default function GPTAnalysisPage() {
       sessionStorage.setItem("recentAnalysis", JSON.stringify(analysisData));
 
       navigate(`/result/${encodeURIComponent(analysis.emotion)}`);
+    } else {
+      alert("감정 분석 결과를 찾을 수 없습니다. 다시 분석해주세요.");
     }
   };
 

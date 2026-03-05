@@ -32,12 +32,12 @@ interface DailyEntry {
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, session, isLoggedIn, loading: authLoading } = useAuth();
+  const { session, isLoggedIn, loading: authLoading } = useAuth();
   const [dailyEntries, setDailyEntries] = useState<DailyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(
-    null
+    null,
   );
   const [playingEntryId, setPlayingEntryId] = useState<string | null>(null);
 
@@ -54,16 +54,16 @@ const DashboardPage: React.FC = () => {
         `${process.env.REACT_APP_API_URL}/api/daily-entries`,
         {
           headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (response.status === 401) {
         const shouldLogin = window.confirm(
-          "로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?"
+          "로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?",
         );
         if (shouldLogin) {
           navigate("/auth");
@@ -91,17 +91,17 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     // 인증이 로딩 중이거나 로그인되지 않은 경우 대기
     if (authLoading) return;
-    
+
     if (!isLoggedIn) {
-      navigate('/auth');
+      navigate("/auth");
       return;
     }
-    
+
     // 세션이 있을 때만 데이터 가져오기
     if (session?.access_token) {
       fetchDailyEntries();
     }
-  }, [authLoading, isLoggedIn, session?.access_token]);
+  }, [authLoading, isLoggedIn, navigate, fetchDailyEntries]);
 
   // 오디오 정리용 별도 useEffect
   useEffect(() => {
@@ -162,13 +162,16 @@ const DashboardPage: React.FC = () => {
   const getMostFrequentEmotion = () => {
     if (dailyEntries.length === 0) return "-";
 
-    const emotionCounts = dailyEntries.reduce((acc, entry) => {
-      acc[entry.detected_emotion] = (acc[entry.detected_emotion] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const emotionCounts = dailyEntries.reduce(
+      (acc, entry) => {
+        acc[entry.detected_emotion] = (acc[entry.detected_emotion] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return Object.keys(emotionCounts).reduce((a, b) =>
-      emotionCounts[a] > emotionCounts[b] ? a : b
+      emotionCounts[a] > emotionCounts[b] ? a : b,
     );
   };
 
@@ -192,11 +195,14 @@ const DashboardPage: React.FC = () => {
       return new Date(entry.date || entry.created_at) >= weekAgo;
     });
 
-    const emotionCounts = thisMonthEntries.reduce((acc, entry) => {
-      const emotion = entry.detected_emotion;
-      if (emotion) acc[emotion] = (acc[emotion] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const emotionCounts = thisMonthEntries.reduce(
+      (acc, entry) => {
+        const emotion = entry.detected_emotion;
+        if (emotion) acc[emotion] = (acc[emotion] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     const statsArray = Object.entries(emotionCounts)
       .map(([emotion, count]) => ({ emotion, count }))

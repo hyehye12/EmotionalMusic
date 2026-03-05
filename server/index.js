@@ -10,11 +10,11 @@ const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // 라우트 import
-const authRoutes = require("./server/routes/auth");
-const diaryRoutes = require("./server/routes/diary");
-const musicRoutes = require("./server/routes/music");
-const dashboardRoutes = require("./server/routes/dashboard");
-const dailyEntriesRoutes = require("./server/routes/dailyEntries");
+const authRoutes = require("./routes/auth");
+const diaryRoutes = require("./routes/diary");
+const musicRoutes = require("./routes/music");
+const dashboardRoutes = require("./routes/dashboard");
+const dailyEntriesRoutes = require("./routes/dailyEntries");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -58,7 +58,7 @@ app.use(
 app.use(express.json());
 
 // 환경변수 (서버에서 관리)
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // 라우트 연결
 app.use("/api/auth", authRoutes);
@@ -72,7 +72,7 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
   try {
     const { diaryText, userId } = req.body;
 
-    if (!OPENAI_API_KEY) {
+    if (!GEMINI_API_KEY) {
       return res.json({
         emotion: "평온함",
         analysis: "API 키가 설정되지 않았습니다.",
@@ -81,54 +81,65 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
       });
     }
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: `당신은 따뜻하고 공감적인 감정 상담사입니다. 사용자의 일기를 분석하여 감정을 파악하고, 
-            공감과 위로, 그리고 실용적인 조언을 제공해주세요. 
-            응답은 다음 JSON 형식으로 해주세요:
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [
+              {
+                text: `당신은 따뜻하고 공감적인 감정 상담사입니다. 사용자의 일기를 분석하여 감정을 파악하고,
+공감과 위로, 그리고 실용적인 조언을 제공해주세요.
+반드시 다음 JSON 형식으로만 응답하고, JSON 외의 텍스트는 포함하지 마세요:
+{
+  "emotion": "감정 (행복함/우울함/스트레스/설렘/평온함/지침 중 하나)",
+  "analysis": "일기에 대한 깊이 있는 분석 (2-3문장)",
+  "advice": "실용적인 조언이나 해결책 (2-3문장)",
+  "encouragement": "따뜻한 격려나 응원의 말 (1-2문장)"
+}`,
+              },
+            ],
+          },
+          contents: [
             {
-              "emotion": "감정 (행복함/우울함/스트레스/설렘/평온함/지침 중 하나)",
-              "analysis": "일기에 대한 깊이 있는 분석 (2-3문장)",
-              "advice": "실용적인 조언이나 해결책 (2-3문장)",
-              "encouragement": "따뜻한 격려나 응원의 말 (1-2문장)"
-            }`,
+              role: "user",
+              parts: [
+                {
+                  text: `다음은 사용자가 작성한 일기입니다. 위의 JSON 형식에 맞춰 분석해주세요:\n\n${diaryText}`,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 600,
           },
-          {
-            role: "user",
-            content: `다음은 사용자가 작성한 일기입니다. 위의 형식에 맞춰 분석해주세요:\n\n${diaryText}`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 500,
-      }),
-    });
+        }),
+      }
+    );
 
     if (!response.ok) {
-      throw new Error("GPT API 호출 실패");
+      throw new Error(`Gemini API 호출 실패: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.choices[0]?.message?.content;
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!content) {
-      throw new Error("GPT 응답에 content가 없습니다.");
+      throw new Error("Gemini 응답에 content가 없습니다.");
     }
 
-    // JSON 파싱
+    // JSON 파싱 (마크다운 코드블록 제거 후 파싱)
     let result;
     try {
-      result = JSON.parse(content.trim());
+      const cleaned = content.trim().replace(/^```json\s*/i, "").replace(/\s*```$/, "");
+      result = JSON.parse(cleaned);
     } catch {
-      throw new Error("GPT 응답을 JSON으로 파싱할 수 없습니다.");
+      throw new Error("Gemini 응답을 JSON으로 파싱할 수 없습니다.");
     }
 
     // 사용자 ID가 있으면 감정 분석 데이터 저장
@@ -170,7 +181,7 @@ app.get("/api/health", (req, res) => {
     status: "OK",
     message: "Server is running",
     apis: {
-      openai: !!OPENAI_API_KEY,
+      gemini: !!GEMINI_API_KEY,
       supabase: !!supabaseUrl && !!supabaseServiceKey,
       itunes: true, // iTunes API는 무료이므로 항상 사용 가능
     },
@@ -180,7 +191,7 @@ app.get("/api/health", (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`서버가 포트 ${PORT}에서 실행 중입니다`);
   console.log(`API 상태:`);
-  console.log(`- OpenAI: ${OPENAI_API_KEY ? "설정됨" : "설정되지 않음"}`);
+  console.log(`- Gemini: ${GEMINI_API_KEY ? "설정됨" : "설정되지 않음"}`);
   console.log(
     `- Supabase: ${
       supabaseUrl && supabaseServiceKey ? "설정됨" : "설정되지 않음"

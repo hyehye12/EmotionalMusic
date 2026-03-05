@@ -101,7 +101,7 @@ const DashboardPage: React.FC = () => {
     if (session?.access_token) {
       fetchDailyEntries();
     }
-  }, [authLoading, isLoggedIn, navigate, fetchDailyEntries]);
+  }, [authLoading, isLoggedIn, navigate, fetchDailyEntries, session?.access_token]);
 
   // 오디오 정리용 별도 useEffect
   useEffect(() => {

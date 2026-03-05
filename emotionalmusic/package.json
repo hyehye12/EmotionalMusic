@@ -17,13 +17,6 @@
     "@types/react-dom": "^19.1.6",
     "axios": "^1.11.0",
     "chance": "^1.1.13",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "jsonwebtoken": "^9.0.2",
-    "luxon": "^3.7.1",
-    "node-fetch": "^3.3.2",
-    "postgres": "^3.4.8",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-redux": "^9.2.0",
@@ -39,10 +32,7 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"npm run start\"",
-    "server:dev": "nodemon server.js"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": [
@@ -69,9 +59,7 @@
     "@types/chance": "^1.1.7",
     "@types/luxon": "^3.6.2",
     "autoprefixer": "^10.4.21",
-    "concurrently": "^9.2.0",
     "daisyui": "^4.12.12",
-    "nodemon": "^3.1.10",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17"
   }

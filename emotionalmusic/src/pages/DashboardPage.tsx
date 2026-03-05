@@ -43,7 +43,6 @@ const DashboardPage: React.FC = () => {
 
   const fetchDailyEntries = useCallback(async () => {
     if (!session?.access_token) {
-      console.log('No access token available');
       return;
     }
 
@@ -78,7 +77,6 @@ const DashboardPage: React.FC = () => {
       }
 
       const entries = await safeJsonParse(response);
-      console.log("Fetched entries:", entries); // 디버깅용
       setDailyEntries(entries || []);
     } catch (err) {
       console.error("Daily entries fetch error:", err);
@@ -174,43 +172,41 @@ const DashboardPage: React.FC = () => {
     );
   };
 
-  // 월별 감정 통계 계산
-  const monthlyEmotionStats = useMemo(() => {
-    console.log("Computing emotion stats for entries:", dailyEntries); // 디버깅용
+  // 이번 달 / 이번 주 엔트리 수 계산
+  const { thisMonthCount, thisWeekCount, monthlyEmotionStats } = useMemo(() => {
+    if (dailyEntries.length === 0) {
+      return { thisMonthCount: 0, thisWeekCount: 0, monthlyEmotionStats: [] };
+    }
 
-    if (dailyEntries.length === 0) return [];
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
-
-    // 이번 달 엔트리만 필터링
     const thisMonthEntries = dailyEntries.filter((entry) => {
-      const entryDate = new Date(entry.date || entry.created_at);
-      return (
-        entryDate.getMonth() === currentMonth &&
-        entryDate.getFullYear() === currentYear
-      );
+      const d = new Date(entry.date || entry.created_at);
+      return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     });
 
-    console.log("This month entries:", thisMonthEntries); // 디버깅용
+    const thisWeekEntries = dailyEntries.filter((entry) => {
+      return new Date(entry.date || entry.created_at) >= weekAgo;
+    });
 
     const emotionCounts = thisMonthEntries.reduce((acc, entry) => {
       const emotion = entry.detected_emotion;
-      if (emotion) {
-        acc[emotion] = (acc[emotion] || 0) + 1;
-      }
+      if (emotion) acc[emotion] = (acc[emotion] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-
-    console.log("Emotion counts:", emotionCounts); // 디버깅용
 
     const statsArray = Object.entries(emotionCounts)
       .map(([emotion, count]) => ({ emotion, count }))
       .sort((a, b) => b.count - a.count);
 
-    console.log("Final stats array:", statsArray); // 디버깅용
-    return statsArray;
+    return {
+      thisMonthCount: thisMonthEntries.length,
+      thisWeekCount: thisWeekEntries.length,
+      monthlyEmotionStats: statsArray,
+    };
   }, [dailyEntries]);
 
   // 이번 달 가장 많은 감정과 메시지
@@ -350,28 +346,28 @@ const DashboardPage: React.FC = () => {
             <h3 className="mb-2 text-2xl font-bold text-gray-900">
               {dailyEntries.length}
             </h3>
-            <p className="text-gray-600">작성한 일기</p>
+            <p className="text-gray-600">총 일기</p>
           </div>
           <div className="p-6 text-center modern-card">
-            <div className="mb-3 text-3xl">🎵</div>
+            <div className="mb-3 text-3xl">🗓️</div>
             <h3 className="mb-2 text-2xl font-bold text-gray-900">
-              {dailyEntries.length}
+              {thisMonthCount}
             </h3>
-            <p className="text-gray-600">선택한 음악</p>
+            <p className="text-gray-600">이번 달 기록</p>
           </div>
           <div className="p-6 text-center modern-card">
-            <div className="mb-3 text-3xl">🤖</div>
+            <div className="mb-3 text-3xl">📆</div>
             <h3 className="mb-2 text-2xl font-bold text-gray-900">
-              {dailyEntries.length}
+              {thisWeekCount}
             </h3>
-            <p className="text-gray-600">AI 분석</p>
+            <p className="text-gray-600">이번 주 기록</p>
           </div>
           <div className="p-6 text-center modern-card">
             <div className="mb-3 text-3xl">😊</div>
             <h3 className="mb-2 text-2xl font-bold text-gray-900">
               {getMostFrequentEmotion()}
             </h3>
-            <p className="text-gray-600">가장 많은 감정</p>
+            <p className="text-gray-600">주요 감정</p>
           </div>
         </div>
 

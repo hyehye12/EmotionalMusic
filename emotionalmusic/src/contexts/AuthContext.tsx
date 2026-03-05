@@ -59,7 +59,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // 인증 상태 변경 리스너
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
         setSession(session);
         setUser(session?.user || null);
         

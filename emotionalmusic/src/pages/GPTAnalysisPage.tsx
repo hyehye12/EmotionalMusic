@@ -1,16 +1,16 @@
 import React from "react";
-import { useParams, useNavigate, Navigate } from "react-router-dom";
+import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { useDiaryAnalysis } from "../hooks/useGPTAnalysis";
 import { safeJsonParse } from "../utils/apiUtils";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function GPTAnalysisPage() {
-  const { diaryText } = useParams<{ diaryText: string }>();
+  const location = useLocation();
+  const diaryText = (location.state as { diaryText?: string })?.diaryText || "";
   const navigate = useNavigate();
   const { session } = useAuth();
-  const decodedDiaryText = diaryText ? decodeURIComponent(diaryText) : "";
   const { analysis, loading, error, retry } =
-    useDiaryAnalysis(decodedDiaryText);
+    useDiaryAnalysis(diaryText);
 
   const handleBack = () => {
     navigate("/");
@@ -56,7 +56,7 @@ export default function GPTAnalysisPage() {
 
       // AI 분석 결과를 세션 스토리지에 저장 (음악 페이지에서 사용)
       const analysisData = {
-        diaryContent: decodedDiaryText,
+        diaryContent: diaryText,
         emotion: analysis.emotion,
         analysis: analysis.analysis,
         advice: analysis.advice,
@@ -203,7 +203,7 @@ export default function GPTAnalysisPage() {
 
             <div className="p-6 bg-white border border-blue-100 rounded-lg">
               <p className="text-lg leading-relaxed text-gray-800">
-                {decodeURIComponent(diaryText)}
+                {diaryText}
               </p>
             </div>
           </div>

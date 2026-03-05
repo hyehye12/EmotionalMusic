@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { analyzeEmotion } from "../utils/emotionAnalyzer";
-import { useDiaryStore } from "../hooks/useDiaryStore";
 import { useAuth } from "../contexts/AuthContext";
-import { DiaryService, MoodService } from "../services/authService";
-import { EMOTION_SCORES } from "../data/emotionConstants";
 import MusicLoadingPage from "../components/MusicLoadingPage";
 import AnalysisLoadingPage from "../components/AnalysisLoadingPage";
 
@@ -14,36 +11,14 @@ export default function MainPage() {
   const [isGPTAnalyzing, setIsGPTAnalyzing] = useState(false);
   const [analyzedEmotion, setAnalyzedEmotion] = useState<string>("");
   const navigate = useNavigate();
-  const { setDiaryText: setStoreDiaryText } = useDiaryStore();
   const { user, isLoggedIn, signOut } = useAuth();
 
   const handleSubmit = async () => {
     if (!diaryText.trim()) return;
 
     setIsAnalyzing(true);
-    setStoreDiaryText(diaryText);
     const emotion = analyzeEmotion(diaryText);
     setAnalyzedEmotion(emotion);
-
-    if (isLoggedIn && user) {
-      try {
-        await DiaryService.saveDiaryEntry({
-          userId: user.id,
-          content: diaryText,
-          emotion: emotion,
-        });
-
-        const emotionScore =
-          EMOTION_SCORES[emotion as keyof typeof EMOTION_SCORES] || 5;
-
-        await MoodService.saveMoodData({
-          emotion: emotion,
-          score: emotionScore,
-        });
-      } catch (error) {
-        console.error("데이터 저장 오류:", error);
-      }
-    }
 
     setTimeout(() => {
       setIsAnalyzing(false);
@@ -55,11 +30,10 @@ export default function MainPage() {
     if (!diaryText.trim()) return;
 
     setIsGPTAnalyzing(true);
-    setStoreDiaryText(diaryText);
-    
+
     setTimeout(() => {
       setIsGPTAnalyzing(false);
-      navigate(`/analysis/${encodeURIComponent(diaryText)}`);
+      navigate('/analysis', { state: { diaryText } });
     }, 1500);
   };
 

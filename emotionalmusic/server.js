@@ -10,11 +10,11 @@ const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 // 라우트 import
-const authRoutes = require("./src/routes/auth");
-const diaryRoutes = require("./src/routes/diary");
-const musicRoutes = require("./src/routes/music");
-const dashboardRoutes = require("./src/routes/dashboard");
-const dailyEntriesRoutes = require("./src/routes/dailyEntries");
+const authRoutes = require("./server/routes/auth");
+const diaryRoutes = require("./server/routes/diary");
+const musicRoutes = require("./server/routes/music");
+const dashboardRoutes = require("./server/routes/dashboard");
+const dailyEntriesRoutes = require("./server/routes/dailyEntries");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -117,10 +117,19 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
     }
 
     const data = await response.json();
-    const content = data.choices[0].message.content;
+    const content = data.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error("GPT 응답에 content가 없습니다.");
+    }
 
     // JSON 파싱
-    const result = JSON.parse(content);
+    let result;
+    try {
+      result = JSON.parse(content.trim());
+    } catch {
+      throw new Error("GPT 응답을 JSON으로 파싱할 수 없습니다.");
+    }
 
     // 사용자 ID가 있으면 감정 분석 데이터 저장
     if (userId) {

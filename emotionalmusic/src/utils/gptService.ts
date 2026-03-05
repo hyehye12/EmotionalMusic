@@ -1,4 +1,4 @@
-// GPT API 서비스 - 통합 버전
+// GPT API 서비스 - 서버 프록시를 통해 호출 (API 키 브라우저 노출 방지)
 import { safeJsonParse } from "./apiUtils";
 
 export interface GPTAnalysisResult {
@@ -13,129 +13,48 @@ export interface EmotionAdviceResult {
   advice: string;
 }
 
-//일기 분석 함수
+// 일기 분석 함수 - 서버 프록시(/api/gpt/analyze-diary)를 통해 호출
 export const analyzeDiaryWithGPT = async (
   diaryText: string
 ): Promise<GPTAnalysisResult> => {
+  const apiUrl = process.env.REACT_APP_API_URL;
+
+  if (!apiUrl) {
+    return getMockGPTAnalysis(diaryText);
+  }
+
   try {
-    const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
-
-    if (!apiKey) {
-      console.log("API 키가 없어 모의 응답을 사용합니다.");
-      return getMockGPTAnalysis(diaryText);
-    }
-
-    // 실제 GPT API 호출
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(`${apiUrl}/api/gpt/analyze-diary`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: `당신은 따뜻하고 공감적인 감정 상담사입니다. 사용자의 일기를 분석하여 감정을 파악하고, 
-            공감과 위로, 그리고 실용적인 조언을 제공해주세요. 
-            
-            반드시 다음 JSON 형식으로만 응답해주세요:
-            {
-              "emotion": "감정 (행복함/우울함/스트레스/설렘/평온함/지침 중 하나)",
-              "analysis": "일기에 대한 깊이 있는 분석 (2-3문장)",
-              "advice": "실용적인 조언이나 해결책 (2-3문장)",
-              "encouragement": "따뜻한 격려나 응원의 말 (1-2문장)"
-            }
-            
-            JSON 외의 다른 텍스트는 포함하지 마세요.`,
-          },
-          {
-            role: "user",
-            content: `다음은 사용자가 작성한 일기입니다. 위의 JSON 형식에 맞춰 분석해주세요:\n\n${diaryText}`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 600,
-      }),
+      body: JSON.stringify({ diaryText }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error("GPT API 에러:", response.status, errorText);
-      throw new Error(`GPT API 호출 실패: ${response.status}`);
+      throw new Error(`서버 오류: ${response.status}`);
     }
 
-    const data = await safeJsonParse(response);
-    let content = data.choices[0]?.message?.content;
+    const result = await safeJsonParse(response);
 
-    if (!content) {
-      throw new Error("GPT 응답에 content가 없습니다.");
+    if (!result.emotion || !result.analysis || !result.advice || !result.encouragement) {
+      throw new Error("응답 데이터가 불완전합니다.");
     }
 
-    // JSON 파싱을 위해 불필요한 텍스트 제거
-    content = content.trim();
-
-    // JSON 코드 블록이 있다면 추출
-    if (content.includes("```json")) {
-      const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        content = jsonMatch[1];
-      }
-    } else if (content.includes("```")) {
-      const jsonMatch = content.match(/```\n?([\s\S]*?)\n?```/);
-      if (jsonMatch) {
-        content = jsonMatch[1];
-      }
-    }
-
-    try {
-      const result = JSON.parse(content);
-
-      // 필수 필드 검증
-      if (
-        !result.emotion ||
-        !result.analysis ||
-        !result.advice ||
-        !result.encouragement
-      ) {
-        throw new Error("GPT 응답에 필수 필드가 누락되었습니다.");
-      }
-
-      return {
-        emotion: result.emotion,
-        analysis: result.analysis,
-        advice: result.advice,
-        encouragement: result.encouragement,
-      };
-    } catch (parseError) {
-      console.error("JSON 파싱 오류:", parseError);
-      console.error("파싱 시도한 내용:", content);
-
-      // JSON 파싱 실패 시 정규식으로 값 추출 시도
-      const emotion =
-        content.match(/"emotion"\s*:\s*"([^"]+)"/)?.[1] || "평온함";
-      const analysis =
-        content.match(/"analysis"\s*:\s*"([^"]+)"/)?.[1] ||
-        "일기 분석 중 오류가 발생했습니다.";
-      const advice =
-        content.match(/"advice"\s*:\s*"([^"]+)"/)?.[1] ||
-        "마음을 편안하게 하고 충분한 휴식을 취하세요.";
-      const encouragement =
-        content.match(/"encouragement"\s*:\s*"([^"]+)"/)?.[1] ||
-        "당신은 충분히 잘하고 있어요! 💪";
-
-      return { emotion, analysis, advice, encouragement };
-    }
+    return {
+      emotion: result.emotion,
+      analysis: result.analysis,
+      advice: result.advice,
+      encouragement: result.encouragement,
+    };
   } catch (error) {
     console.error("GPT 분석 오류:", error);
-
-    // API 호출 실패 시 모의 응답 사용
     return getMockGPTAnalysis(diaryText);
   }
 };
 
-// 모의 GPT 응답 (API 키가 없을 때 사용)
+// 모의 GPT 응답 (서버 연결 불가 시 사용)
 export const getMockGPTAnalysis = (diaryText: string): GPTAnalysisResult => {
   const emotions = ["행복함", "우울함", "스트레스", "설렘", "평온함", "지침"];
   const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
@@ -170,7 +89,7 @@ export const getMockGPTAnalysis = (diaryText: string): GPTAnalysisResult => {
         "두근두근 설레는 마음이 느껴져요! 새로운 경험이나 만남이 있었던 것 같아요.",
       advice:
         "이 설렘을 즐기되, 너무 긴장하지 마세요. 자연스럽게 흘러가는 대로 해보세요.",
-      encouragement: "당신의 설렘은 아름다워요. 이 순간을 소중히 여기세요! ��",
+      encouragement: "당신의 설렘은 아름다워요. 이 순간을 소중히 여기세요! 🌸",
     },
     평온함: {
       analysis: "차분하고 평온한 하루였군요. 마음의 평화를 찾으신 것 같아요.",
@@ -198,7 +117,7 @@ export const getMockGPTAnalysis = (diaryText: string): GPTAnalysisResult => {
   };
 };
 
-// 모의 EmotionAdvice 응답 (API 키가 없을 때 사용)
+// 모의 EmotionAdvice 응답 (서버 연결 불가 시 사용)
 export const getMockEmotionAdvice = (
   userInput: string
 ): EmotionAdviceResult => {

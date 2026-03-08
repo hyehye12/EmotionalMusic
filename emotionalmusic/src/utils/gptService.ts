@@ -18,11 +18,7 @@ export interface EmotionAdviceResult {
 export const analyzeDiaryWithGPT = async (
   diaryText: string
 ): Promise<GPTAnalysisResult> => {
-  const apiUrl = process.env.REACT_APP_API_URL;
-
-  if (!apiUrl) {
-    return getMockGPTAnalysis(diaryText);
-  }
+  const apiUrl = process.env.REACT_APP_API_URL ?? "";
 
   try {
     const response = await fetch(`${apiUrl}/api/gpt/analyze-diary`, {

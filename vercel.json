@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "buildCommand": "cd emotionalmusic && npm install && npm run build",
+  "outputDirectory": "emotionalmusic/build",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

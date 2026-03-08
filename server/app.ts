@@ -108,7 +108,9 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
     );
 
     if (!response.ok) {
-      throw new Error(`Gemini API 호출 실패: ${response.status}`);
+      const errorBody = await response.text();
+      console.error(`Gemini API 오류 (${response.status}):`, errorBody);
+      throw new Error(`Gemini API 호출 실패: ${response.status} - ${errorBody}`);
     }
 
     const data = (await response.json()) as {

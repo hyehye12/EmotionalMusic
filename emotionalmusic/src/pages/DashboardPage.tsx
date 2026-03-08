@@ -32,7 +32,7 @@ interface DailyEntry {
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const { session, isLoggedIn, loading: authLoading } = useAuth();
+  const { session, isLoggedIn, loading: authLoading, user } = useAuth();
   const [dailyEntries, setDailyEntries] = useState<DailyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -285,10 +285,10 @@ const DashboardPage: React.FC = () => {
 
             <div className="flex items-center space-x-4">
               <span className="font-medium text-gray-700">
-                안녕하세요, 사용자님
+                안녕하세요, {user?.user_metadata?.name || user?.email?.split('@')[0]}님
               </span>
               <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-blue-500 rounded-full">
-                U
+                {(user?.user_metadata?.name || user?.email || 'U')[0].toUpperCase()}
               </div>
             </div>
           </div>

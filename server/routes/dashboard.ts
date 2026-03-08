@@ -1,25 +1,18 @@
-const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
-const { authenticateToken } = require('../middleware/auth');
+import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { supabase } from '../lib/supabase';
 
-const router = express.Router();
-
-// Supabase 설정
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const router = Router();
 
 // 대시보드 데이터 조회
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
-    const { days = 30 } = req.query;
+    const days = typeof req.query.days === 'string' ? parseInt(req.query.days, 10) : 30;
 
-    // 날짜 범위 설정
     const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - parseInt(days));
+    fromDate.setDate(fromDate.getDate() - days);
 
-    // 감정 분석 통계
     const { data: emotionStats, error: emotionError } = await supabase
       .from('emotion_analyses')
       .select('detected_emotion, created_at')
@@ -29,7 +22,6 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (emotionError) throw emotionError;
 
-    // 최근 일기
     const { data: recentDiaries, error: diaryError } = await supabase
       .from('diaries')
       .select('*')
@@ -39,7 +31,6 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (diaryError) throw diaryError;
 
-    // 최근 음악 추천
     const { data: recentMusic, error: musicError } = await supabase
       .from('music_recommendations')
       .select('*')
@@ -49,14 +40,12 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (musicError) throw musicError;
 
-    // 감정 통계 계산
-    const emotionCounts = {};
-    emotionStats.forEach(analysis => {
-      const emotion = analysis.detected_emotion;
+    const emotionCounts: Record<string, number> = {};
+    (emotionStats || []).forEach((analysis) => {
+      const emotion = analysis.detected_emotion as string;
       emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
     });
 
-    // 총 일기 수
     const { count: totalDiaries, error: diaryCountError } = await supabase
       .from('diaries')
       .select('*', { count: 'exact', head: true })
@@ -64,7 +53,6 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (diaryCountError) throw diaryCountError;
 
-    // 총 음악 추천 수
     const { count: totalMusic, error: musicCountError } = await supabase
       .from('music_recommendations')
       .select('*', { count: 'exact', head: true })
@@ -72,25 +60,25 @@ router.get('/', authenticateToken, async (req, res) => {
 
     if (musicCountError) throw musicCountError;
 
-    // 가장 많은 감정
-    const mostCommonEmotion = Object.entries(emotionCounts).reduce((a, b) => 
-      emotionCounts[a[0]] > emotionCounts[b[0]] ? a : b, ['알 수 없음', 0]
+    const mostCommonEmotion = Object.entries(emotionCounts).reduce<[string, number]>(
+      (a, b) => (a[1] > b[1] ? a : b),
+      ['알 수 없음', 0]
     )[0];
 
     res.json({
       summary: {
         totalDiaries: totalDiaries || 0,
         totalMusic: totalMusic || 0,
-        totalEmotionAnalyses: emotionStats.length,
-        mostCommonEmotion
+        totalEmotionAnalyses: (emotionStats || []).length,
+        mostCommonEmotion,
       },
       emotionStats: emotionCounts,
       recentDiaries: recentDiaries || [],
       recentMusic: recentMusic || [],
-      chartData: emotionStats.map(analysis => ({
-        date: analysis.created_at.split('T')[0],
-        emotion: analysis.detected_emotion
-      }))
+      chartData: (emotionStats || []).map((analysis) => ({
+        date: (analysis.created_at as string).split('T')[0],
+        emotion: analysis.detected_emotion,
+      })),
     });
   } catch (error) {
     console.error('Dashboard data fetch error:', error);
@@ -99,13 +87,13 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // 감정 통계 조회
-router.get('/emotions', authenticateToken, async (req, res) => {
+router.get('/emotions', authenticateToken, async (req: Request, res: Response) => {
   try {
     const userId = req.userId;
-    const { days = 30 } = req.query;
+    const days = typeof req.query.days === 'string' ? parseInt(req.query.days, 10) : 30;
 
     const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - parseInt(days));
+    fromDate.setDate(fromDate.getDate() - days);
 
     const { data: emotionStats, error } = await supabase
       .from('emotion_analyses')
@@ -116,28 +104,22 @@ router.get('/emotions', authenticateToken, async (req, res) => {
 
     if (error) throw error;
 
-    // 일별 감정 데이터 그룹화
-    const dailyEmotions = {};
-    emotionStats.forEach(analysis => {
-      const date = analysis.created_at.split('T')[0];
-      if (!dailyEmotions[date]) {
-        dailyEmotions[date] = {};
-      }
-      const emotion = analysis.detected_emotion;
-      dailyEmotions[date][emotion] = (dailyEmotions[date][emotion] || 0) + 1;
-    });
+    const dailyEmotions: Record<string, Record<string, number>> = {};
+    const emotionCounts: Record<string, number> = {};
 
-    // 감정별 총 개수
-    const emotionCounts = {};
-    emotionStats.forEach(analysis => {
-      const emotion = analysis.detected_emotion;
+    (emotionStats || []).forEach((analysis) => {
+      const date = (analysis.created_at as string).split('T')[0];
+      const emotion = analysis.detected_emotion as string;
+
+      if (!dailyEmotions[date]) dailyEmotions[date] = {};
+      dailyEmotions[date][emotion] = (dailyEmotions[date][emotion] || 0) + 1;
       emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
     });
 
     res.json({
       dailyEmotions,
       emotionCounts,
-      totalAnalyses: emotionStats.length
+      totalAnalyses: (emotionStats || []).length,
     });
   } catch (error) {
     console.error('Emotion stats fetch error:', error);
@@ -145,4 +127,4 @@ router.get('/emotions', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

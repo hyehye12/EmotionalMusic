@@ -1,42 +1,33 @@
-const express = require("express");
-const cors = require("cors");
-const fetch = require("node-fetch");
-require("dotenv").config();
+import "dotenv/config"; // 반드시 첫 번째 — 라우트 모듈보다 먼저 .env 로드
 
-// Supabase 설정
-const { createClient } = require("@supabase/supabase-js");
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || "";
-const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+import express from "express";
+import cors from "cors";
 
-// 라우트 import
-const authRoutes = require("./routes/auth");
-const diaryRoutes = require("./routes/diary");
-const musicRoutes = require("./routes/music");
-const dashboardRoutes = require("./routes/dashboard");
-const dailyEntriesRoutes = require("./routes/dailyEntries");
+import { supabase } from "./lib/supabase";
+import authRoutes from "./routes/auth";
+import diaryRoutes from "./routes/diary";
+import musicRoutes from "./routes/music";
+import dashboardRoutes from "./routes/dashboard";
+import dailyEntriesRoutes from "./routes/dailyEntries";
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
-app.get("/", (req, res) => {
+app.get("/", (_req, res) => {
   res.send("Welcome to the Emotional Music API Server!");
 });
 
-// CORS 설정
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://emotional-music.vercel.app", // 실제 Vercel URL로 변경
+  "https://emotional-music.vercel.app",
   "https://emotionalmusic.onrender.com",
 ];
 
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // origin이 없는 경우 (같은 도메인) 허용
+    origin: (origin, callback) => {
       if (!origin) return callback(null, true);
-
-      // 허용된 origin 목록에 있는지 확인
       if (
         allowedOrigins.some((allowedOrigin) => {
           if (allowedOrigin.includes("*")) {
@@ -53,41 +44,40 @@ app.use(
       }
     },
     credentials: true,
-  })
+  }),
 );
+
 app.use(express.json());
 
-// 환경변수 (서버에서 관리)
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-// 라우트 연결
 app.use("/api/auth", authRoutes);
 app.use("/api/diary", diaryRoutes);
 app.use("/api/music", musicRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/daily-entries", dailyEntriesRoutes);
 
-// GPT API 프록시 - 일기 분석
+// GPT API 프록시 - 일기 분석 (Gemini)
 app.post("/api/gpt/analyze-diary", async (req, res) => {
   try {
-    const { diaryText, userId } = req.body;
+    const { diaryText, userId } = req.body as {
+      diaryText: string;
+      userId?: string;
+    };
 
     if (!GEMINI_API_KEY) {
-      return res.json({
+      res.json({
         emotion: "평온함",
         analysis: "API 키가 설정되지 않았습니다.",
         advice: "마음을 편안하게 하고, 자신에게 친절하게 대하세요.",
         encouragement: "당신은 충분히 잘하고 있어요. 힘내세요! 💪",
       });
+      return;
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           systemInstruction: {
             parts: [
@@ -114,35 +104,38 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
               ],
             },
           ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 600,
-          },
+          generationConfig: { temperature: 0.7, maxOutputTokens: 600 },
         }),
-      }
+      },
     );
 
     if (!response.ok) {
       throw new Error(`Gemini API 호출 실패: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as {
+      candidates?: { content?: { parts?: { text?: string }[] } }[];
+    };
     const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!content) {
-      throw new Error("Gemini 응답에 content가 없습니다.");
-    }
+    if (!content) throw new Error("Gemini 응답에 content가 없습니다.");
 
-    // JSON 파싱 (마크다운 코드블록 제거 후 파싱)
-    let result;
+    let result: {
+      emotion: string;
+      analysis: string;
+      advice: string;
+      encouragement: string;
+    };
     try {
-      const cleaned = content.trim().replace(/^```json\s*/i, "").replace(/\s*```$/, "");
+      const cleaned = content
+        .trim()
+        .replace(/^```json\s*/i, "")
+        .replace(/\s*```$/, "");
       result = JSON.parse(cleaned);
     } catch {
       throw new Error("Gemini 응답을 JSON으로 파싱할 수 없습니다.");
     }
 
-    // 사용자 ID가 있으면 감정 분석 데이터 저장
     if (userId) {
       try {
         await supabase.from("emotion_analyses").insert({
@@ -157,12 +150,7 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
       }
     }
 
-    res.json({
-      emotion: result.emotion,
-      analysis: result.analysis,
-      advice: result.advice,
-      encouragement: result.encouragement,
-    });
+    res.json(result);
   } catch (error) {
     console.error("GPT 분석 오류:", error);
     res.status(500).json({
@@ -175,27 +163,24 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
   }
 });
 
-// 3. 헬스 체크
-app.get("/api/health", (req, res) => {
+// 헬스 체크
+app.get("/api/health", (_req, res) => {
   res.json({
     status: "OK",
     message: "Server is running",
     apis: {
       gemini: !!GEMINI_API_KEY,
-      supabase: !!supabaseUrl && !!supabaseServiceKey,
-      itunes: true, // iTunes API는 무료이므로 항상 사용 가능
+      supabase: !!process.env.REACT_APP_SUPABASE_URL && !!process.env.REACT_APP_SUPABASE_SERVICE_KEY,
+      itunes: true,
     },
   });
 });
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`서버가 포트 ${PORT}에서 실행 중입니다`);
-  console.log(`API 상태:`);
   console.log(`- Gemini: ${GEMINI_API_KEY ? "설정됨" : "설정되지 않음"}`);
   console.log(
-    `- Supabase: ${
-      supabaseUrl && supabaseServiceKey ? "설정됨" : "설정되지 않음"
-    }`
+    `- Supabase: ${process.env.REACT_APP_SUPABASE_URL && process.env.REACT_APP_SUPABASE_SERVICE_KEY ? "설정됨" : "설정되지 않음"}`,
   );
   console.log(`- iTunes: 항상 사용 가능 (무료 API)`);
 });

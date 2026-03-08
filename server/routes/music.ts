@@ -1,43 +1,29 @@
-const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
-const { authenticateToken } = require('../middleware/auth');
+import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { supabase } from '../lib/supabase';
 
-const router = express.Router();
-
-// Supabase 설정
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const router = Router();
 
 // 음악 추천 저장
-router.post('/recommendations', authenticateToken, async (req, res) => {
+router.post('/recommendations', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { emotion, track_name, artist_name, album_name, preview_url, artwork_url } = req.body;
-    
+    const { emotion, track_name, artist_name, album_name, preview_url, artwork_url } =
+      req.body as Record<string, string>;
+
     if (!emotion || !track_name || !artist_name) {
-      return res.status(400).json({ error: '감정, 곡명, 아티스트명은 필수입니다.' });
+      res.status(400).json({ error: '감정, 곡명, 아티스트명은 필수입니다.' });
+      return;
     }
 
     const { data: recommendation, error } = await supabase
       .from('music_recommendations')
-      .insert({
-        user_id: req.userId,
-        emotion,
-        track_name,
-        artist_name,
-        album_name,
-        preview_url,
-        artwork_url
-      })
+      .insert({ user_id: req.userId, emotion, track_name, artist_name, album_name, preview_url, artwork_url })
       .select()
       .single();
 
     if (error) throw error;
 
-    res.status(201).json({
-      message: '음악 추천이 저장되었습니다.',
-      recommendation
-    });
+    res.status(201).json({ message: '음악 추천이 저장되었습니다.', recommendation });
   } catch (error) {
     console.error('Music recommendation save error:', error);
     res.status(500).json({ error: '음악 추천 저장 중 오류가 발생했습니다.' });
@@ -45,7 +31,7 @@ router.post('/recommendations', authenticateToken, async (req, res) => {
 });
 
 // 사용자의 모든 음악 추천 조회
-router.get('/recommendations', authenticateToken, async (req, res) => {
+router.get('/recommendations', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { data: recommendations, error } = await supabase
       .from('music_recommendations')
@@ -63,7 +49,7 @@ router.get('/recommendations', authenticateToken, async (req, res) => {
 });
 
 // 특정 감정의 음악 추천 조회
-router.get('/recommendations/emotion/:emotion', authenticateToken, async (req, res) => {
+router.get('/recommendations/emotion/:emotion', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { data: recommendations, error } = await supabase
       .from('music_recommendations')
@@ -82,7 +68,7 @@ router.get('/recommendations/emotion/:emotion', authenticateToken, async (req, r
 });
 
 // 음악 추천 삭제
-router.delete('/recommendations/:id', authenticateToken, async (req, res) => {
+router.delete('/recommendations/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { error } = await supabase
       .from('music_recommendations')
@@ -99,4 +85,4 @@ router.delete('/recommendations/:id', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

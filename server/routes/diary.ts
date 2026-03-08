@@ -1,40 +1,28 @@
-const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
-const { authenticateToken } = require('../middleware/auth');
+import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { supabase } from '../lib/supabase';
 
-const router = express.Router();
-
-// Supabase 설정
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const router = Router();
 
 // 일기 생성
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { title, content, emotion } = req.body;
-    
+    const { title, content, emotion } = req.body as Record<string, string>;
+
     if (!title || !content || !emotion) {
-      return res.status(400).json({ error: '제목, 내용, 감정은 필수입니다.' });
+      res.status(400).json({ error: '제목, 내용, 감정은 필수입니다.' });
+      return;
     }
 
     const { data: newDiary, error } = await supabase
       .from('diaries')
-      .insert({
-        user_id: req.userId,
-        title,
-        content,
-        emotion
-      })
+      .insert({ user_id: req.userId, title, content, emotion })
       .select()
       .single();
 
     if (error) throw error;
 
-    res.status(201).json({
-      message: '일기가 저장되었습니다.',
-      diary: newDiary
-    });
+    res.status(201).json({ message: '일기가 저장되었습니다.', diary: newDiary });
   } catch (error) {
     console.error('Diary creation error:', error);
     res.status(500).json({ error: '일기 저장 중 오류가 발생했습니다.' });
@@ -42,7 +30,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // 사용자의 모든 일기 조회
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { data: diaries, error } = await supabase
       .from('diaries')
@@ -60,7 +48,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // 특정 일기 조회
-router.get('/:id', authenticateToken, async (req, res) => {
+router.get('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { data: diary, error } = await supabase
       .from('diaries')
@@ -71,7 +59,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: '일기를 찾을 수 없습니다.' });
+        res.status(404).json({ error: '일기를 찾을 수 없습니다.' });
+        return;
       }
       throw error;
     }
@@ -84,18 +73,13 @@ router.get('/:id', authenticateToken, async (req, res) => {
 });
 
 // 일기 수정
-router.put('/:id', authenticateToken, async (req, res) => {
+router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
-    const { title, content, emotion } = req.body;
-    
+    const { title, content, emotion } = req.body as Record<string, string>;
+
     const { data: updatedDiary, error } = await supabase
       .from('diaries')
-      .update({
-        title,
-        content,
-        emotion,
-        updated_at: new Date().toISOString()
-      })
+      .update({ title, content, emotion, updated_at: new Date().toISOString() })
       .eq('id', req.params.id)
       .eq('user_id', req.userId)
       .select()
@@ -103,15 +87,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return res.status(404).json({ error: '일기를 찾을 수 없습니다.' });
+        res.status(404).json({ error: '일기를 찾을 수 없습니다.' });
+        return;
       }
       throw error;
     }
 
-    res.json({
-      message: '일기가 수정되었습니다.',
-      diary: updatedDiary
-    });
+    res.json({ message: '일기가 수정되었습니다.', diary: updatedDiary });
   } catch (error) {
     console.error('Diary update error:', error);
     res.status(500).json({ error: '일기 수정 중 오류가 발생했습니다.' });
@@ -119,7 +101,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 });
 
 // 일기 삭제
-router.delete('/:id', authenticateToken, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { error } = await supabase
       .from('diaries')
@@ -136,4 +118,4 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

@@ -14,7 +14,7 @@ export default function ResultPage() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(
-    null
+    null,
   );
   const [showAllTracks, setShowAllTracks] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -162,7 +162,7 @@ export default function ResultPage() {
         {
           method: "POST",
           headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session?.access_token}`,
             "Content-Type": "application/json",
           },
           credentials: "include",
@@ -174,7 +174,7 @@ export default function ResultPage() {
             preview_url: currentTrack.previewUrl,
             artwork_url: currentTrack.artworkUrl100,
           }),
-        }
+        },
       );
 
       if (response.ok) {
@@ -182,7 +182,7 @@ export default function ResultPage() {
       } else {
         if (response.status === 401) {
           const shouldLogin = window.confirm(
-            "로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?"
+            "로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?",
           );
           if (shouldLogin) {
             navigate("/auth");
@@ -214,7 +214,7 @@ export default function ResultPage() {
     try {
       // 저장된 데이터가 있는지 확인 (예: localStorage 또는 세션에서 AI 분석 결과 가져오기)
       const analysisData = JSON.parse(
-        sessionStorage.getItem("recentAnalysis") || "{}"
+        sessionStorage.getItem("recentAnalysis") || "{}",
       );
 
       if (!analysisData.diaryContent || !analysisData.emotion) {
@@ -227,7 +227,7 @@ export default function ResultPage() {
         {
           method: "POST",
           headers: {
-            'Authorization': `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session?.access_token}`,
             "Content-Type": "application/json",
           },
           credentials: "include",
@@ -244,20 +244,20 @@ export default function ResultPage() {
             ai_advice: analysisData.advice,
             ai_encouragement: analysisData.encouragement,
           }),
-        }
+        },
       );
 
       if (response.ok) {
         setTodaySongSelected(true);
         alert(
-          "오늘의 곡이 선택되었습니다! 🎆\n대시보드에서 오늘의 일기와 함께 확인할 수 있습니다."
+          "오늘의 곡이 선택되었습니다! 🎆\n대시보드에서 오늘의 일기와 함께 확인할 수 있습니다.",
         );
         // 세션 저장된 분석 데이터 제거
         sessionStorage.removeItem("recentAnalysis");
       } else {
         if (response.status === 401) {
           const shouldLogin = window.confirm(
-            "로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?"
+            "로그인이 필요한 기능입니다. 로그인 페이지로 이동하시겠습니까?",
           );
           if (shouldLogin) {
             navigate("/auth");
@@ -307,7 +307,7 @@ export default function ResultPage() {
   // GPT 분석에서 온 것인지 확인
   useEffect(() => {
     const analysisData = JSON.parse(
-      sessionStorage.getItem("recentAnalysis") || "{}"
+      sessionStorage.getItem("recentAnalysis") || "{}",
     );
     setFromGPTAnalysis(analysisData.fromGPTAnalysis || false);
   }, []);
@@ -368,7 +368,7 @@ export default function ResultPage() {
                         src={
                           tracks[currentTrackIndex]?.artworkUrl100?.replace(
                             "100x100",
-                            "300x300"
+                            "300x300",
                           ) || "/default-album.jpg"
                         }
                         alt={
@@ -447,8 +447,8 @@ export default function ResultPage() {
                               {isSelectingTodaySong
                                 ? "선택 중..."
                                 : todaySongSelected
-                                ? "✓ 오늘의 곡 선택됨"
-                                : "🌟 오늘의 곡으로 선택"}
+                                  ? "✓ 오늘의 곡 선택됨"
+                                  : "🌟 오늘의 곡으로 선택"}
                             </button>
                           </div>
                         </>
@@ -537,7 +537,7 @@ export default function ResultPage() {
                               audio
                                 .play()
                                 .catch(() =>
-                                  alert("미리듣기를 재생할 수 없습니다.")
+                                  alert("미리듣기를 재생할 수 없습니다."),
                                 );
                             } else {
                               alert("이 트랙은 미리듣기를 지원하지 않습니다.");
@@ -548,7 +548,7 @@ export default function ResultPage() {
                           ▶️
                         </button>
                       </div>
-                    )
+                    ),
                   )}
                 </div>
 
@@ -598,7 +598,7 @@ export default function ResultPage() {
                   onClick={() => navigate("/")}
                   className="w-full py-3 text-sm font-medium text-gray-700 transition-all bg-white border border-gray-300 rounded-lg sm:py-4 sm:text-base hover:bg-gray-50"
                 >
-                  🤖 새로운 AI 분석
+                  새로운 감정 분석
                 </button>
                 <button
                   onClick={handleGoToDashboard}

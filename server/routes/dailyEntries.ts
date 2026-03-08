@@ -1,15 +1,11 @@
-const express = require('express');
-const { createClient } = require('@supabase/supabase-js');
-const { authenticateToken } = require('../middleware/auth');
+import { Router, Request, Response } from 'express';
+import { authenticateToken } from '../middleware/auth';
+import { supabase } from '../lib/supabase';
 
-const router = express.Router();
-
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.REACT_APP_SUPABASE_SERVICE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const router = Router();
 
 // 모든 일별 엔트리 조회
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const { data: entries, error } = await supabase
       .from('daily_entries')
@@ -27,7 +23,7 @@ router.get('/', authenticateToken, async (req, res) => {
 });
 
 // 오늘의 엔트리 조회
-router.get('/today/entry', authenticateToken, async (req, res) => {
+router.get('/today/entry', authenticateToken, async (req: Request, res: Response) => {
   try {
     const today = new Date().toISOString().split('T')[0];
 
@@ -47,8 +43,8 @@ router.get('/today/entry', authenticateToken, async (req, res) => {
   }
 });
 
-// 일별 엔트리 생성 또는 업데이트 (하루에 하나, UNIQUE(user_id, date))
-router.post('/', authenticateToken, async (req, res) => {
+// 일별 엔트리 생성 또는 업데이트
+router.post('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const {
       diary_content,
@@ -62,10 +58,11 @@ router.post('/', authenticateToken, async (req, res) => {
       ai_analysis,
       ai_advice,
       ai_encouragement,
-    } = req.body;
+    } = req.body as Record<string, string>;
 
     if (!diary_content || !detected_emotion || !selected_track_name || !selected_artist_name) {
-      return res.status(400).json({ error: '일기 내용, 감정, 곡명, 아티스트명은 필수입니다.' });
+      res.status(400).json({ error: '일기 내용, 감정, 곡명, 아티스트명은 필수입니다.' });
+      return;
     }
 
     const today = new Date().toISOString().split('T')[0];
@@ -103,4 +100,4 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

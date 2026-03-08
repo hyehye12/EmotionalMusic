@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getTracksByEmotion } from '../data/emotionData';
 import { searchItunesTracks, ItunesTrack } from '../services/itunes';
 
 // 캐시 저장소
@@ -28,52 +27,20 @@ export const useMusicSearch = (emotion: string) => {
         }
       }
 
-      // iTunes API는 무료이므로 항상 실제 API 호출
-      try {
-        const itunesTracks = await searchItunesTracks(emotion, 9);
-        if (itunesTracks.length > 0) {
-          setTracks(itunesTracks);
-          // 캐시에 저장
-          trackCache.set(emotion, { data: itunesTracks, timestamp: Date.now() });
-        } else {
-          // iTunes API에서 결과가 없으면 모의 데이터 사용
-          const emotionTracks = getTracksByEmotion(emotion);
-          // EmotionTrack을 ItunesTrack 형태로 변환
-          const convertedTracks: ItunesTrack[] = emotionTracks.map(track => ({
-            trackId: parseInt(track.id),
-            trackName: track.name,
-            artistName: track.artist,
-            collectionName: track.album,
-            artworkUrl100: track.imageUrl,
-            previewUrl: undefined,
-            trackViewUrl: track.spotifyUrl, // 외부 링크 URL
-            primaryGenreName: 'Pop',
-            trackTimeMillis: undefined
-          }));
-          setTracks(convertedTracks);
-        }
-      } catch (itunesError) {
-        console.warn('iTunes API 오류, 모의 데이터 사용:', itunesError);
-        // iTunes API 실패 시 모의 데이터 사용
-        const emotionTracks = getTracksByEmotion(emotion);
-        const convertedTracks: ItunesTrack[] = emotionTracks.map(track => ({
-          trackId: parseInt(track.id),
-          trackName: track.name,
-          artistName: track.artist,
-          collectionName: track.album,
-          artworkUrl100: track.imageUrl,
-          previewUrl: undefined,
-          trackViewUrl: track.spotifyUrl, // 외부 링크 URL
-          primaryGenreName: 'Pop',
-          trackTimeMillis: undefined
-        }));
-        setTracks(convertedTracks);
+      // iTunes API 호출
+      const itunesTracks = await searchItunesTracks(emotion, 9);
+      if (itunesTracks.length > 0) {
+        setTracks(itunesTracks);
+        // 캐시에 저장
+        trackCache.set(emotion, { data: itunesTracks, timestamp: Date.now() });
+      } else {
+        setError("추천할 음악을 찾지 못했습니다. 다시 시도해주세요.");
       }
       
       setLoading(false);
     } catch (err) {
       console.error("음악 검색 오류:", err);
-      setError("음악을 불러오는 중 오류가 발생했습니다.");
+      setError("음악을 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
       setLoading(false);
     }
   }, [emotion]);

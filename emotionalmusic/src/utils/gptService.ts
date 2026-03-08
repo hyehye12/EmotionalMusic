@@ -1,5 +1,6 @@
 // GPT API 서비스 - 서버 프록시를 통해 호출 (API 키 브라우저 노출 방지)
 import { safeJsonParse } from "./apiUtils";
+import { analyzeEmotion } from "./emotionAnalyzer";
 
 export interface GPTAnalysisResult {
   emotion: string;
@@ -56,8 +57,7 @@ export const analyzeDiaryWithGPT = async (
 
 // 모의 GPT 응답 (서버 연결 불가 시 사용)
 export const getMockGPTAnalysis = (diaryText: string): GPTAnalysisResult => {
-  const emotions = ["행복함", "우울함", "스트레스", "설렘", "평온함", "지침"];
-  const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
+  const detectedEmotion = analyzeEmotion(diaryText);
 
   const mockResponses = {
     행복함: {
@@ -108,12 +108,12 @@ export const getMockGPTAnalysis = (diaryText: string): GPTAnalysisResult => {
   };
 
   return {
-    emotion: randomEmotion,
+    emotion: detectedEmotion,
     analysis:
-      mockResponses[randomEmotion as keyof typeof mockResponses].analysis,
-    advice: mockResponses[randomEmotion as keyof typeof mockResponses].advice,
+      mockResponses[detectedEmotion as keyof typeof mockResponses].analysis,
+    advice: mockResponses[detectedEmotion as keyof typeof mockResponses].advice,
     encouragement:
-      mockResponses[randomEmotion as keyof typeof mockResponses].encouragement,
+      mockResponses[detectedEmotion as keyof typeof mockResponses].encouragement,
   };
 };
 

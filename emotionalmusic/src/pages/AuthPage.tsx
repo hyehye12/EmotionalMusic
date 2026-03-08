@@ -9,6 +9,7 @@ export default function AuthPage() {
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -90,7 +91,8 @@ export default function AuthPage() {
 
         // 이메일 확인이 필요한 경우
         if (!user?.email_confirmed_at) {
-          throw new Error("이메일 확인이 필요합니다. 이메일을 확인해주세요.");
+          setEmailSent(true);
+          return;
         }
 
         // 회원가입 성공 후 메인페이지로 이동
@@ -102,6 +104,32 @@ export default function AuthPage() {
       setLoading(false);
     }
   };
+
+  if (emailSent) {
+    return (
+      <div className="flex items-center justify-center min-h-screen p-4 font-sans sm:p-8 bg-gray-50">
+        <div className="relative w-full max-w-md p-6 text-center modern-card sm:p-8 lg:p-12">
+          <div className="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-3xl bg-blue-100 rounded-full">
+            📧
+          </div>
+          <h2 className="mb-3 text-2xl font-bold text-gray-800">가입 완료!</h2>
+          <p className="mb-2 text-gray-600">
+            <span className="font-semibold text-blue-600">{email}</span>로<br />
+            인증 메일을 발송했습니다.
+          </p>
+          <p className="mb-6 text-sm text-gray-500">
+            메일함에서 인증 링크를 클릭하면 로그인할 수 있어요.
+          </p>
+          <button
+            onClick={() => { setEmailSent(false); setIsLogin(true); }}
+            className="w-full py-3 text-base font-medium rounded-lg soft-button"
+          >
+            🔑 로그인하기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 font-sans sm:p-8 bg-gray-50">

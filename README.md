@@ -26,7 +26,7 @@
 | ---------- | ----------------------------------------------------------------------- |
 | 프론트엔드 | React 19, TypeScript, Tailwind CSS, DaisyUI, Framer Motion              |
 | 백엔드     | Node.js, Express.js, MongoDB (Mongoose), JWT, OpenAI API, iTunes Search |
-| 기타       | Git, GitHub, Postman, Vercel/Render, ESLint/Prettier                    |
+| 기타       | Git, GitHub, Postman, Vercel, ESLint/Prettier                           |
 
 ---
 

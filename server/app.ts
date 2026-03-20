@@ -11,7 +11,7 @@ import dashboardRoutes from "./routes/dashboard";
 import dailyEntriesRoutes from "./routes/dailyEntries";
 
 const app = express();
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
 app.get("/", (_req, res) => {
   res.send("Welcome to the Emotional Music API Server!");
@@ -53,7 +53,7 @@ app.use("/api/music", musicRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/daily-entries", dailyEntriesRoutes);
 
-// GPT API 프록시 - 일기 분석 (Gemini)
+// GPT API 프록시 - 일기 분석 (OpenAI)
 app.post("/api/gpt/analyze-diary", async (req, res) => {
   try {
     const { diaryText, userId } = req.body as {
@@ -61,7 +61,7 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
       userId?: string;
     };
 
-    if (!GEMINI_API_KEY) {
+    if (!OPENAI_API_KEY) {
       res.json({
         emotion: "평온함",
         analysis: "API 키가 설정되지 않았습니다.",
@@ -71,54 +71,51 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
       return;
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [
-              {
-                text: `당신은 따뜻하고 공감적인 감정 상담사입니다. 사용자의 일기를 분석하여 감정을 파악하고,
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `당신은 따뜻하고 공감적인 감정 상담사입니다. 사용자의 일기를 분석하여 감정을 파악하고,
 공감과 위로, 그리고 실용적인 조언을 제공해주세요.
 반드시 다음 JSON 형식으로만 응답하고, JSON 외의 텍스트는 포함하지 마세요:
 {
   "emotion": "사용자가 입력한 일기의 대표 감정 (1~3단어)",
   "analysis": "일기에 대한 깊이 있는 분석 (2-3문장)",
   "advice": "실용적인 조언이나 해결책 (2-3문장)",
-  "encouragement": "따뜻한 격려나 응원의 말 (1-2문장)"
+  "encouragement": "따뜻한 격려나 응원의 말 (2-3문장)"
 }`,
-              },
-            ],
           },
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: `다음은 사용자가 작성한 일기입니다. 위의 JSON 형식에 맞춰 분석해주세요:\n\n${diaryText}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: { temperature: 0.7, maxOutputTokens: 600 },
-        }),
-      },
-    );
+          {
+            role: "user",
+            content: `다음은 사용자가 작성한 일기입니다. 위의 JSON 형식에 맞춰 분석해주세요:\n\n${diaryText}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 600,
+      }),
+    });
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error(`Gemini API 오류 (${response.status}):`, errorBody);
-      throw new Error(`Gemini API 호출 실패: ${response.status} - ${errorBody}`);
+      console.error(`OpenAI API 오류 (${response.status}):`, errorBody);
+      throw new Error(
+        `OpenAI API 호출 실패: ${response.status} - ${errorBody}`,
+      );
     }
 
     const data = (await response.json()) as {
-      candidates?: { content?: { parts?: { text?: string }[] } }[];
+      choices?: { message?: { content?: string } }[];
     };
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const content = data.choices?.[0]?.message?.content;
 
-    if (!content) throw new Error("Gemini 응답에 content가 없습니다.");
+    if (!content) throw new Error("OpenAI 응답에 content가 없습니다.");
 
     let result: {
       emotion: string;
@@ -133,7 +130,7 @@ app.post("/api/gpt/analyze-diary", async (req, res) => {
         .replace(/\s*```$/, "");
       result = JSON.parse(cleaned);
     } catch {
-      throw new Error("Gemini 응답을 JSON으로 파싱할 수 없습니다.");
+      throw new Error("OpenAI 응답을 JSON으로 파싱할 수 없습니다.");
     }
 
     if (userId) {
@@ -169,7 +166,7 @@ app.get("/api/health", (_req, res) => {
     status: "OK",
     message: "Server is running",
     apis: {
-      gemini: !!GEMINI_API_KEY,
+      openai: !!OPENAI_API_KEY,
       supabase:
         !!process.env.REACT_APP_SUPABASE_URL &&
         !!process.env.REACT_APP_SUPABASE_SERVICE_KEY,
